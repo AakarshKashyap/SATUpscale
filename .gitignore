@@ -1,0 +1,45 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# AWS
+.aws/
+
+# Secrets
+*.pem
+secrets/
+credentials/
+
+# ML model files
+*.pth
+*.pt
+*.onnx
+*.ckpt
+*.safetensors
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
