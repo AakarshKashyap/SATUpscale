@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "SATUP - Satellite AI Upscaler",
+  "version": "0.1.0",
+  "description": "Upscale satellite imagery with SATUP AI.",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {}
+}

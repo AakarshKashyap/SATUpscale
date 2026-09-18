@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SATUpscale</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+  <div class="container">
+
+    <header>
+      <div class="brand">
+        <div class="logo">S</div>
+
+        <div>
+          <h1>SATUpscale</h1>
+          <span>AI Satellite Super Resolution</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- READY STATE -->
+      <section id="readyState">
+
+        <div class="status-card">
+          <div class="status-dot"></div>
+
+          <div>
+            <strong>Image selected</strong>
+            <p>Ready to generate an 8× enhancement.</p>
+          </div>
+        </div>
+
+        <div class="preview">
+          <div id="imagePreview" class="preview-placeholder">
+            <span>✦</span>
+            <p>No image selected</p>
+          </div>
+        </div>
+
+        <button id="upscaleBtn">
+          Upscale Image 8× →
+        </button>
+
+      </section>
+
+
+      <!-- PROCESSING STATE -->
+      <section id="processingState" class="hidden">
+
+        <div class="processing-container">
+
+          <div class="loader"></div>
+
+          <h2>Enhancing image...</h2>
+
+          <p>
+            SATUpscale AI is generating an
+            <strong>8× super-resolution</strong> result.
+          </p>
+
+          <div class="progress-bar">
+            <div class="progress"></div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- COMPLETE STATE -->
+      <section id="completeState" class="hidden">
+
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+
+          <div>
+            <strong>Enhancement complete</strong>
+            <p>Your 8× result is ready.</p>
+          </div>
+        </div>
+
+        <div class="preview">
+          <div id="resultPreview"></div>
+
+          <div class="ai-badge">
+            8× AI
+          </div>
+        </div>
+
+        <button id="openWebsiteBtn">
+          Open in SATUpscale →
+        </button>
+
+        <button id="newImageBtn" class="secondary-action">
+          Process another image
+        </button>
+
+      </section>
+
+    </main>
+
+    <footer>
+      <span>SATUpscale v0.1</span>
+      <span>AI Super Resolution</span>
+    </footer>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
