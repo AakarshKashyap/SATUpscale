@@ -21,6 +21,7 @@ import logging
 
 import boto3
 from boto3.dynamodb.conditions import Key
+# pyrefly: ignore [missing-import]
 from PIL import Image
 
 
