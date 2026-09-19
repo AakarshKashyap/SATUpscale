@@ -1,4 +1,4 @@
-﻿"""
+"""
 satup-setup - AWS Lambda Handler
 Routes:
   POST /upscale  -- upscale a base64-encoded image, save to S3, log to DynamoDB
@@ -55,6 +55,35 @@ _FORMAT_QUALITY = {"JPEG": 90, "PNG": None, "WEBP": 90}  # None = lossless (PNG)
 
 
 # ================================================================================
+# CORS configuration
+# ================================================================================
+
+# Allowed origins for CORS.
+# localhost:5173 is the Vite dev server. The Chrome extension sends requests
+# with Origin: chrome-extension://<id> or no Origin at all, so wildcard covers it.
+# In production, replace/extend this set with your deployed frontend domain.
+_CORS_ALLOWED_ORIGINS = {
+    "http://localhost:5173",
+    "http://localhost:4173",   # vite preview
+}
+
+
+def _get_cors_origin(event: dict) -> str:
+    """
+    Return the correct Access-Control-Allow-Origin value.
+    Echoes back the request Origin if it is in the allow-list (most correct for
+    credentials/cookies). Falls back to '*' so the Chrome extension and direct
+    API testing continue to work.
+    """
+    headers = event.get("headers") or {}
+    # API Gateway normalises all header names to lowercase in proxy integration
+    origin = headers.get("origin") or headers.get("Origin") or ""
+    if origin in _CORS_ALLOWED_ORIGINS:
+        return origin
+    return "*"
+
+
+# ================================================================================
 # Lambda entry point
 # ================================================================================
 
@@ -82,13 +111,18 @@ def handler(event, context):
         elif method == "GET" and path.endswith("/history"):
             return _handle_history(event, context)
         elif method == "OPTIONS":
-            return _response(200, {})   # CORS preflight
+            # Preflight response.
+            # NOTE: This branch is only reached if API Gateway is configured to
+            # forward OPTIONS to this Lambda (Lambda Proxy on the OPTIONS method).
+            # If using API Gateway's built-in CORS mock integration instead, this
+            # branch is never invoked â€” see CORS_SETUP.md for instructions.
+            return _preflight_response(event)
         else:
-            return _response(404, {"error": f"Route not found: {method} {path}"})
+            return _response(404, event, {"error": f"Route not found: {method} {path}"})
 
     except Exception as exc:
         logger.exception("Unhandled top-level error")
-        return _response(500, {"error": "Internal server error", "detail": str(exc)})
+        return _response(500, event, {"error": "Internal server error", "detail": str(exc)})
 
 
 # ================================================================================
@@ -106,7 +140,7 @@ def _handle_upscale(event, context):
     try:
         body = json.loads(raw_body)
     except json.JSONDecodeError:
-        return _response(400, {"error": "Request body must be valid JSON."})
+        return _response(400, event, {"error": "Request body must be valid JSON."})
 
     # Extract user ID (from Cognito JWT in API Gateway if present, else fallback to JSON body)
     auth_claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {}) or event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
@@ -114,9 +148,9 @@ def _handle_upscale(event, context):
     image_b64 = (body.get("image")  or "").strip()
 
     if not user_id:
-        return _response(400, {"error": "Missing required field: userId"})
+        return _response(400, event, {"error": "Missing required field: userId"})
     if not image_b64:
-        return _response(400, {"error": "Missing required field: image (base64 string)"})
+        return _response(400, event, {"error": "Missing required field: image (base64 string)"})
 
     # -- Create job record (status = pending) ------------------------------------
     job_id = str(uuid.uuid4())
@@ -142,16 +176,15 @@ def _handle_upscale(event, context):
         img_format = pil_image.format  # set by PIL from file headers
         if img_format not in _ALLOWED_FORMATS:
             _mark_failed(job_id)
-            return _response(400, {
+            return _response(400, event, {
                 "error": f"Unsupported image format: {img_format}. "
                          "Accepted formats: JPEG, PNG, WEBP."
             })
-
         pil_image = pil_image.convert("RGB")
 
     except Exception as exc:
         _mark_failed(job_id)
-        return _response(400, {"error": f"Could not decode image: {exc}"})
+        return _response(400, event, {"error": f"Could not decode image: {exc}"})
 
     # -- Update status to processing ---------------------------------------------
     _update_status(job_id, "processing")
@@ -162,11 +195,11 @@ def _handle_upscale(event, context):
     except ValueError as exc:
         # Size validation error - client's fault (400)
         _mark_failed(job_id)
-        return _response(400, {"error": str(exc)})
+        return _response(400, event, {"error": str(exc)})
     except Exception as exc:
         logger.exception("Inference failed for jobId=%s", job_id)
         _mark_failed(job_id)
-        return _response(500, {"error": f"Inference failed: {exc}"})
+        return _response(500, event, {"error": f"Inference failed: {exc}"})
 
     processing_ms = int((time.time() - t_start) * 1000)
 
@@ -193,7 +226,7 @@ def _handle_upscale(event, context):
     except Exception as exc:
         logger.exception("S3 upload failed for jobId=%s", job_id)
         _mark_failed(job_id)
-        return _response(500, {"error": f"S3 upload failed: {exc}"})
+        return _response(500, event, {"error": f"S3 upload failed: {exc}"})
 
     # -- Update DynamoDB to done -------------------------------------------------
     try:
@@ -226,12 +259,11 @@ def _handle_upscale(event, context):
     }))
 
     # Response matches SCHEMA.md exactly
-    return _response(200, {
+    return _response(200, event, {
         "jobId":     job_id,
         "outputUrl": _presign(processed_url),
         "status":    "done",
     })
-
 
 # ================================================================================
 # GET /history?userId=...
@@ -253,7 +285,7 @@ def _handle_history(event, context):
     user_id = auth_claims.get("sub") or (params.get("userId") or "").strip()
 
     if not user_id:
-        return _response(400, {"error": "Missing required query param: userId"})
+        return _response(400, event, {"error": "Missing required query param: userId"})
 
     try:
         result = _table.query(
@@ -263,7 +295,7 @@ def _handle_history(event, context):
         )
     except Exception as exc:
         logger.exception("DynamoDB history query failed for userId=%s", user_id)
-        return _response(500, {"error": "Failed to fetch history."})
+        return _response(500, event, {"error": "Failed to fetch history."})
 
     # Response matches SCHEMA.md exactly
     jobs = [
@@ -277,8 +309,7 @@ def _handle_history(event, context):
         for item in result.get("Items", [])
     ]
 
-    return _response(200, {"jobs": jobs})
-
+    return _response(200, event, {"jobs": jobs})
 
 # ================================================================================
 # Helpers
@@ -322,14 +353,44 @@ def _presign(url):
     )
 
 
-def _response(status_code: int, body: dict) -> dict:
+def _preflight_response(event: dict) -> dict:
+    """
+    Return a correct CORS preflight (OPTIONS) response.
+    Must include Access-Control-Allow-Origin, -Methods, and -Headers.
+    The Vary header is required when echoing a specific origin (not wildcard).
+    """
+    origin = _get_cors_origin(event)
+    headers = {
+        "Content-Type":                     "application/json",
+        "Access-Control-Allow-Origin":       origin,
+        "Access-Control-Allow-Methods":      "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers":      "Content-Type,Authorization",
+        "Access-Control-Max-Age":            "86400",   # cache preflight 24h
+    }
+    if origin != "*":
+        headers["Vary"] = "Origin"
+    return {
+        "statusCode": 200,
+        "headers": headers,
+        "body": "",
+    }
+
+def _response(status_code: int, event: dict, body: dict) -> dict:
+    """
+    Build a JSON response with correct CORS headers for the requesting origin.
+    The event is required to read the Origin request header.
+    """
+    origin = _get_cors_origin(event)
+    headers = {
+        "Content-Type":                 "application/json",
+        "Access-Control-Allow-Origin":  origin,
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    }
+    if origin != "*":
+        headers["Vary"] = "Origin"
     return {
         "statusCode": status_code,
-        "headers": {
-            "Content-Type":                 "application/json",
-            "Access-Control-Allow-Origin":  "*",
-            "Access-Control-Allow-Headers": "Content-Type,Authorization",
-            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-        },
+        "headers": headers,
         "body": json.dumps(body, default=_json_default),
     }
