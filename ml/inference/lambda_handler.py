@@ -23,6 +23,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from PIL import Image
 
+
+
 from upscale import upscale_image
 
 # ================================================================================
@@ -61,6 +63,7 @@ def handler(event, context):
     - REST API Gateway (v1): event['httpMethod'] + event['path']
     - HTTP API Gateway (v2): event['requestContext']['http']['method'] + event['rawPath']
     """
+    logger.info(f"FULL_EVENT: {json.dumps(event)}")
     path = (event.get("path") or event.get("rawPath") or "").rstrip("/")
     method = (
         event.get("httpMethod")
@@ -224,7 +227,7 @@ def _handle_upscale(event, context):
     # Response matches SCHEMA.md exactly
     return _response(200, {
         "jobId":     job_id,
-        "outputUrl": processed_url,
+        "outputUrl": _presign(processed_url),
         "status":    "done",
     })
 
@@ -235,6 +238,15 @@ def _handle_upscale(event, context):
 
 def _handle_history(event, context):
     params  = event.get("queryStringParameters") or {}
+    
+    # For Function URLs, parse rawQueryString
+    if not params and event.get("rawQueryString"):
+        qs = event.get("rawQueryString", "")
+        for pair in qs.split("&"):
+            if "=" in pair:
+                k, v = pair.split("=", 1)
+                params[k] = v
+    
     # Extract user ID (from Cognito JWT in API Gateway if present, else fallback to query param)
     auth_claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {}) or event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
     user_id = auth_claims.get("sub") or (params.get("userId") or "").strip()
@@ -257,7 +269,7 @@ def _handle_history(event, context):
         {
             "jobId":        item.get("jobId"),
             "originalUrl":  item.get("originalUrl"),    # None for base64 uploads (MVP)
-            "processedUrl": item.get("processedUrl"),
+            "processedUrl": _presign(item.get("processedUrl")),
             "timestamp":    item.get("timestamp"),
             "status":       item.get("status"),
         }
@@ -288,6 +300,27 @@ def _update_status(job_id: str, status: str):
     )
 
 
+from decimal import Decimal
+
+
+def _json_default(o):
+    if isinstance(o, Decimal):
+        return int(o) if o == o.to_integral_value() else float(o)
+    raise TypeError(f"Not JSON serializable: {type(o)}")
+
+
+def _presign(url):
+    """Turn a stored S3 URL into a temporary signed GET URL."""
+    prefix = f"https://{_BUCKET}.s3.amazonaws.com/"
+    if not url or not url.startswith(prefix):
+        return url
+    return _s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": _BUCKET, "Key": url[len(prefix):]},
+        ExpiresIn=3600,
+    )
+
+
 def _response(status_code: int, body: dict) -> dict:
     return {
         "statusCode": status_code,
@@ -297,5 +330,5 @@ def _response(status_code: int, body: dict) -> dict:
             "Access-Control-Allow-Headers": "Content-Type,Authorization",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
         },
-        "body": json.dumps(body),
+        "body": json.dumps(body, default=_json_default),
     }

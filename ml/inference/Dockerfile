@@ -10,4 +10,4 @@ COPY upscale.py        ./
 COPY edsr/model.pth    edsr/model.pth
 COPY edsr/model_2x.pth edsr/model_2x.pth
 
-CMD [" lambda_handler.handler\]
+CMD ["lambda_handler.handler"]
