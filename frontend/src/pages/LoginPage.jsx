@@ -1,8 +1,9 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PublicNavbar from "../components/PublicNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
+import { ArrowRight, AlertCircle, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
@@ -40,62 +41,97 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="app">
+    <div className="app-shell dark-theme-root aerospace-aesthetic">
       <PublicNavbar />
 
-      <main className="auth-page">
-        <div className="auth-card">
-          <div className="auth-header">
-            <span className="section-label">AUTHENTICATION</span>
-            <h1>Sign in to SATUpscale</h1>
-            <p>Access your enhancement workspace and history.</p>
-          </div>
-
-          {error && <div className="auth-error">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="email">Email address</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
+      <main className="auth-split-layout">
+        {/* LEFT PANEL: AUTHENTICATION FORM */}
+        <div className="auth-split-left">
+          <div className="auth-form-box">
+            <div className="eyebrow-status-tag mb-6">
+              <Lock className="icon-xs violet" />
+              <span className="eyebrow-text">AUTHENTICATION</span>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
+            <h1 className="auth-title">
+              Sign in to
+              <br />
+              <span className="title-muted-span">SATUpscale</span>
+            </h1>
 
-            <button
-              type="submit"
-              className="primary-btn auth-submit-btn"
-              disabled={submitting || loading}
-            >
-              {submitting ? "Signing in..." : "Sign In →"}
-            </button>
-          </form>
-
-          <div className="auth-footer">
-            <p>
-              Don't have an account?{" "}
-              <Link to="/signup" className="auth-link">
-                Sign up
-              </Link>
+            <p className="auth-subtitle">
+              Access your enhancement workspace, job telemetry, and image history.
             </p>
+
+            {error && (
+              <div className="inline-error-banner dark-error mb-6">
+                <AlertCircle className="icon-sm" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="auth-form-stack">
+              <div className="custom-form-group">
+                <label htmlFor="email">Email address</label>
+                <input
+                  id="email"
+                  type="email"
+                  className="custom-auth-input"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="custom-form-group">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="password">Password</label>
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  className="custom-auth-input"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="solid-light-btn auth-submit-btn"
+                disabled={submitting || loading}
+                data-cursor="OPEN"
+              >
+                <span>{submitting ? "SIGNING IN..." : "SIGN IN →"}</span>
+              </button>
+            </form>
+
+            <div className="auth-card-footer dark-footer mt-8">
+              <p className="text-muted-slate text-sm">
+                Don't have an account?{" "}
+                <Link to="/signup" className="violet-text font-semibold hover:underline">
+                  Sign up →
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: ATMOSPHERIC EARTH & SATELLITE IMAGERY VISUAL */}
+        <div className="auth-split-right">
+          <img
+            src="/hero_satellite.jpg"
+            alt="Satellite imagery visual"
+            className="auth-visual-image"
+          />
+          <div className="auth-visual-overlay" />
+          <div className="auth-visual-caption">
+            EARTH OBSERVATION · SATUpscale PLATFORM
           </div>
         </div>
       </main>

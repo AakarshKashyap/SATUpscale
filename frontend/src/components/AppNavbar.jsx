@@ -1,5 +1,7 @@
-﻿import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import ThemeToggle from "./navigation/ThemeToggle";
+import { User, LogOut, ArrowRight } from "lucide-react";
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
@@ -10,53 +12,82 @@ export default function AppNavbar() {
     navigate("/login");
   };
 
+  const displayName = user?.name || user?.email?.split("@")[0] || "Account";
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
-    <nav className="navbar app-navbar">
-      <NavLink to="/dashboard" className="logo-link">
-        <div className="logo">
-          <span className="logo-mark">S</span>
-          SATUpscale
-        </div>
-      </NavLink>
+    <header className="public-navbar vantor-style-nav app-header-nav">
+      <div className="navbar-container">
+        {/* LEFT: BRAND LOGO */}
+        <Link to="/dashboard" className="logo-link">
+          <div className="brand-logo">
+            <span className="brand-name-text">
+              <span className="brand-sat">SAT</span>
+              <span className="brand-upscale">Upscale</span>
+            </span>
+          </div>
+        </Link>
 
-      <div className="nav-links app-nav-links">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-        >
-          Dashboard
-        </NavLink>
-        <NavLink
-          to="/enhance"
-          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-        >
-          Enhance
-        </NavLink>
-        <NavLink
-          to="/history"
-          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-        >
-          History
-        </NavLink>
-        <NavLink
-          to="/settings"
-          className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-        >
-          Settings
-        </NavLink>
-      </div>
+        {/* CENTER: EDITORIAL NAVIGATION */}
+        <nav className="desktop-nav-links center-editorial">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `nav-item line-reveal ${isActive ? "active" : ""}`
+            }
+          >
+            <span>WORKSPACE</span>
+            <span className="nav-bottom-line" />
+          </NavLink>
 
-      <div className="nav-actions app-user-menu">
-        <div className="user-badge" title={user?.email || "User"}>
-          <span className="user-avatar">
-            {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
-          </span>
-          <span className="user-name">{user?.name || user?.email || "User"}</span>
+          <NavLink
+            to="/enhance"
+            className={({ isActive }) =>
+              `nav-item line-reveal ${isActive ? "active" : ""}`
+            }
+          >
+            <span>ENHANCEMENT</span>
+            <span className="nav-bottom-line" />
+          </NavLink>
+
+          <NavLink
+            to="/history"
+            className={({ isActive }) =>
+              `nav-item line-reveal ${isActive ? "active" : ""}`
+            }
+          >
+            <span>HISTORY</span>
+            <span className="nav-bottom-line" />
+          </NavLink>
+
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `nav-item line-reveal ${isActive ? "active" : ""}`
+            }
+          >
+            <span>SETTINGS</span>
+            <span className="nav-bottom-line" />
+          </NavLink>
+        </nav>
+
+        {/* RIGHT: THEME TOGGLE & USER ACCOUNT PILL */}
+        <div className="nav-actions">
+          <ThemeToggle />
+
+          <div className="app-user-pill">
+            <span className="user-avatar-badge">{initial}</span>
+            <span className="user-pill-name">{displayName}</span>
+            <button
+              onClick={handleLogout}
+              className="user-logout-icon-btn"
+              title="Sign Out"
+            >
+              <LogOut className="icon-xs" />
+            </button>
+          </div>
         </div>
-        <button onClick={handleLogout} className="logout-btn" title="Sign out">
-          Sign Out
-        </button>
       </div>
-    </nav>
+    </header>
   );
 }

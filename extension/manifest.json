@@ -1,18 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "SATUP - Satellite AI Upscaler",
-  "version": "0.1.0",
-  "description": "Upscale satellite imagery with SATUP AI.",
+  "name": "SATUpscale Companion",
+  "version": "1.0.0",
+  "description": "Capture satellite imagery from any webpage and submit for 8x AI super-resolution enhancement.",
   "permissions": [
     "contextMenus",
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://0237u8c62a.execute-api.us-east-1.amazonaws.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
   "action": {
     "default_popup": "popup.html"
-  },
-  "icons": {}
+  }
 }

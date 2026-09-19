@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
@@ -15,7 +15,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="app">
+    <div className="app-shell dark-theme-root aerospace-aesthetic">
       <AppNavbar />
 
       <main className="dashboard-section" style={{ minHeight: "80vh", maxWidth: "900px", margin: "0 auto" }}>
