@@ -1,5 +1,5 @@
-"""
-satup-setup - AWS Lambda Handler
+﻿"""
+satup-setup - AWS Lambda Handler with JWT Validation
 Routes:
   POST /upscale  -- upscale a base64-encoded image, save to S3, log to DynamoDB
   GET  /history  -- return a user's upscale history (newest first)
@@ -18,13 +18,17 @@ import base64
 import uuid
 import time
 import logging
+from typing import Dict, Tuple, Optional
+from functools import lru_cache
 
 import boto3
 from boto3.dynamodb.conditions import Key
+import jwt
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
+import requests
 # pyrefly: ignore [missing-import]
 from PIL import Image
-
-
 
 from upscale import upscale_image
 
@@ -33,6 +37,15 @@ from upscale import upscale_image
 # ================================================================================
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# ================================================================================
+# Cognito configuration - MUST match your actual values
+# ================================================================================
+COGNITO_REGION = "us-east-1"
+COGNITO_USER_POOL_ID = "us-east-1_X6Xtv869G"
+COGNITO_FRONTEND_CLIENT_ID = "2akj9d7fa1fbnn5p08m017daap"
+COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
+COGNITO_JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 
 # ================================================================================
 # AWS clients - initialized once at cold start, reused on warm invocations
@@ -55,13 +68,189 @@ _FORMAT_QUALITY = {"JPEG": 90, "PNG": None, "WEBP": 90}  # None = lossless (PNG)
 
 
 # ================================================================================
+# JWT Validation - fetch and cache Cognito public keys
+# ================================================================================
+
+@lru_cache(maxsize=1)
+def _get_cognito_public_keys() -> Dict:
+    """
+    Fetch Cognito JWKS (public keys) from the well-known endpoint.
+    Cached for the lifetime of the Lambda container (warm invocations).
+    
+    Returns:
+        {"keys": [{"kid": "...", "kty": "RSA", "n": "...", "e": "..."}, ...]}
+    
+    Raises:
+        requests.RequestException if the fetch fails
+    """
+    logger.info(f"Cold start -- fetching Cognito JWKS from {COGNITO_JWKS_URL}")
+    response = requests.get(COGNITO_JWKS_URL, timeout=5)
+    response.raise_for_status()
+    return response.json()
+
+
+def _verify_cognito_access_token(token: str) -> Dict:
+    """
+    Verify Cognito ACCESS token signature, issuer, and client_id.
+    
+    Args:
+        token: Raw JWT string (without "Bearer " prefix)
+    
+    Returns:
+        Decoded token claims dict with verified `sub` claim.
+    
+    Raises:
+        jwt.InvalidSignatureError   - signature verification failed
+        jwt.DecodeError             - malformed token
+        jwt.InvalidIssuerError      - issuer doesn't match Cognito
+        ValueError              - client_id doesn't match App Client ID
+        jwt.ExpiredSignatureError   - token expired
+    """
+    try:
+        # Decode WITHOUT verification first to get the header (which contains `kid`)
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get("kid")
+        
+        if not kid:
+            raise jwt.DecodeError("Missing 'kid' in token header")
+        
+        # Fetch Cognito public keys
+        jwks = _get_cognito_public_keys()
+        
+        # Find the key matching the token's `kid`
+        public_key = None
+        for key_data in jwks.get("keys", []):
+            if key_data.get("kid") == kid:
+                # Convert JWK to RSA public key
+                n = int.from_bytes(base64.urlsafe_b64decode(key_data['n'] + '=='), byteorder='big')
+                e = int.from_bytes(base64.urlsafe_b64decode(key_data['e'] + '=='), byteorder='big')
+                public_numbers = rsa.RSAPublicNumbers(e, n)
+                public_key = public_numbers.public_key(default_backend())
+                break
+        
+        if not public_key:
+            raise jwt.DecodeError(f"No matching key found for kid={kid}")
+        
+        # Verify: signature + issuer + client_id (for ACCESS token, not `aud`)
+        decoded = jwt.decode(
+            token,
+            public_key,
+            algorithms=["RS256"],
+            issuer=COGNITO_ISSUER,
+            options={"verify_signature": True, "verify_iat": True}
+        )
+        
+        # For ACCESS tokens, client_id is present instead of aud
+        token_client_id = decoded.get("client_id")
+        VALID_CLIENT_IDS = [ COGNITO_FRONTEND_CLIENT_ID]
+        if token_client_id not in VALID_CLIENT_IDS:
+            raise ValueError(f"Token client_id '{token_client_id}' does not match valid client IDs")
+        
+        logger.info(f"JWT verified -- sub={decoded.get('sub')}, client_id={token_client_id}")
+        return decoded
+        
+    except jwt.ExpiredSignatureError:
+        logger.warning("JWT expired")
+        raise
+    except jwt.InvalidSignatureError:
+        logger.warning("JWT signature verification failed")
+        raise
+    except jwt.InvalidIssuerError:
+        logger.warning(f"JWT issuer mismatch (expected {COGNITO_ISSUER})")
+        raise
+    except ValueError as e:
+        logger.warning(f"JWT claim validation failed: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"JWT verification error: {type(e).__name__}: {e}")
+        raise
+
+
+def _extract_bearer_token(event: dict) -> Optional[str]:
+    """
+    Extract Bearer token from Authorization header.
+    
+    Args:
+        event: Lambda proxy event
+    
+    Returns:
+        Token string (without "Bearer " prefix) or None if missing/malformed
+    """
+    headers = event.get("headers") or {}
+    auth_header = headers.get("authorization") or headers.get("Authorization") or ""
+    
+    if not auth_header.startswith("Bearer "):
+        return None
+    
+    return auth_header[7:]  # Remove "Bearer " prefix
+
+
+def _get_user_id_from_jwt(event: dict) -> Tuple[Optional[str], Optional[Dict]]:
+    """
+    Extract and verify JWT token from request, return user ID (sub) and full claims.
+    
+    Args:
+        event: Lambda proxy event
+    
+    Returns:
+        (user_id: str, claims: dict) on success
+        (None, error_response_dict) on failure (401)
+    """
+    token = _extract_bearer_token(event)
+    
+    if not token:
+        logger.warning("Missing or malformed Authorization header")
+        return None, {
+            "statusCode": 401,
+            "headers": _cors_headers(event),
+            "body": json.dumps({"error": "Missing or invalid Authorization header"}),
+        }
+    
+    try:
+        claims = _verify_cognito_access_token(token)
+        user_id = claims.get("sub")
+        
+        if not user_id:
+            logger.error("Token missing 'sub' claim")
+            return None, {
+                "statusCode": 401,
+                "headers": _cors_headers(event),
+                "body": json.dumps({"error": "Token missing 'sub' claim"}),
+            }
+        
+        return user_id, claims
+        
+    except jwt.ExpiredSignatureError:
+        return None, {
+            "statusCode": 401,
+            "headers": _cors_headers(event),
+            "body": json.dumps({"error": "Token expired"}),
+        }
+    except jwt.InvalidSignatureError:
+        return None, {
+            "statusCode": 401,
+            "headers": _cors_headers(event),
+            "body": json.dumps({"error": "Invalid token signature"}),
+        }
+    except (jwt.DecodeError, jwt.InvalidIssuerError, ValueError) as e:
+        return None, {
+            "statusCode": 401,
+            "headers": _cors_headers(event),
+            "body": json.dumps({"error": f"Invalid token: {str(e)}"}),
+        }
+    except Exception as e:
+        logger.exception(f"Unexpected error verifying JWT")
+        return None, {
+            "statusCode": 401,
+            "headers": _cors_headers(event),
+            "body": json.dumps({"error": "Token verification failed"}),
+        }
+
+
+# ================================================================================
 # CORS configuration
 # ================================================================================
 
-# Allowed origins for CORS.
-# localhost:5173 is the Vite dev server. The Chrome extension sends requests
-# with Origin: chrome-extension://<id> or no Origin at all, so wildcard covers it.
-# In production, replace/extend this set with your deployed frontend domain.
 _CORS_ALLOWED_ORIGINS = {
     "http://localhost:5173",
     "http://localhost:4173",   # vite preview
@@ -69,18 +258,26 @@ _CORS_ALLOWED_ORIGINS = {
 
 
 def _get_cors_origin(event: dict) -> str:
-    """
-    Return the correct Access-Control-Allow-Origin value.
-    Echoes back the request Origin if it is in the allow-list (most correct for
-    credentials/cookies). Falls back to '*' so the Chrome extension and direct
-    API testing continue to work.
-    """
+    """Return the correct Access-Control-Allow-Origin value."""
     headers = event.get("headers") or {}
-    # API Gateway normalises all header names to lowercase in proxy integration
     origin = headers.get("origin") or headers.get("Origin") or ""
     if origin in _CORS_ALLOWED_ORIGINS:
         return origin
     return "*"
+
+
+def _cors_headers(event: dict) -> Dict[str, str]:
+    """Build CORS headers for the response."""
+    origin = _get_cors_origin(event)
+    headers = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    }
+    if origin != "*":
+        headers["Vary"] = "Origin"
+    return headers
 
 
 # ================================================================================
@@ -111,11 +308,6 @@ def handler(event, context):
         elif method == "GET" and path.endswith("/history"):
             return _handle_history(event, context)
         elif method == "OPTIONS":
-            # Preflight response.
-            # NOTE: This branch is only reached if API Gateway is configured to
-            # forward OPTIONS to this Lambda (Lambda Proxy on the OPTIONS method).
-            # If using API Gateway's built-in CORS mock integration instead, this
-            # branch is never invoked â€” see CORS_SETUP.md for instructions.
             return _preflight_response(event)
         else:
             return _response(404, event, {"error": f"Route not found: {method} {path}"})
@@ -132,6 +324,11 @@ def handler(event, context):
 def _handle_upscale(event, context):
     t_start = time.time()
 
+    # -- Verify JWT and extract user ID -----------------------------------------------
+    user_id, error_response = _get_user_id_from_jwt(event)
+    if user_id is None:
+        return error_response
+
     # -- Parse request body -------------------------------------------------------
     raw_body = event.get("body") or "{}"
     if event.get("isBase64Encoded"):
@@ -142,13 +339,8 @@ def _handle_upscale(event, context):
     except json.JSONDecodeError:
         return _response(400, event, {"error": "Request body must be valid JSON."})
 
-    # Extract user ID (from Cognito JWT in API Gateway if present, else fallback to JSON body)
-    auth_claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {}) or event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
-    user_id = auth_claims.get("sub") or (body.get("userId") or "").strip()
-    image_b64 = (body.get("image")  or "").strip()
+    image_b64 = (body.get("image") or "").strip()
 
-    if not user_id:
-        return _response(400, event, {"error": "Missing required field: userId"})
     if not image_b64:
         return _response(400, event, {"error": "Missing required field: image (base64 string)"})
 
@@ -173,7 +365,7 @@ def _handle_upscale(event, context):
         pil_image   = Image.open(io.BytesIO(image_bytes))
 
         # Validate format (JPEG, PNG, WebP only)
-        img_format = pil_image.format  # set by PIL from file headers
+        img_format = pil_image.format
         if img_format not in _ALLOWED_FORMATS:
             _mark_failed(job_id)
             return _response(400, event, {
@@ -193,7 +385,6 @@ def _handle_upscale(event, context):
     try:
         result_image, img_meta = upscale_image(pil_image)
     except ValueError as exc:
-        # Size validation error - client's fault (400)
         _mark_failed(job_id)
         return _response(400, event, {"error": str(exc)})
     except Exception as exc:
@@ -203,18 +394,18 @@ def _handle_upscale(event, context):
 
     processing_ms = int((time.time() - t_start) * 1000)
 
-    # -- Save output PNG to S3 ---------------------------------------------------
+    # -- Save output to S3 -------------------------------------------------------
     try:
         buf     = io.BytesIO()
         quality = _FORMAT_QUALITY[img_format]
         if quality:
             result_image.save(buf, format=img_format, quality=quality)
         else:
-            result_image.save(buf, format=img_format)  # PNG: lossless
+            result_image.save(buf, format=img_format)
         buf.seek(0)
 
         ext    = _FORMAT_EXT[img_format]
-        s3_key = f"output/{user_id}/{job_id}.{ext}"   # Partitioned by userId (per ML tasks checklist)
+        s3_key = f"output/{user_id}/{job_id}.{ext}"
         _s3.put_object(
             Bucket=_BUCKET,
             Key=s3_key,
@@ -236,7 +427,7 @@ def _handle_upscale(event, context):
                 "SET #st = :s, processedUrl = :u, "
                 "inputSize = :i, processingTimeMs = :t, imageFormat = :f"
             ),
-            ExpressionAttributeNames={"#st": "status"},   # 'status' is a reserved word
+            ExpressionAttributeNames={"#st": "status"},
             ExpressionAttributeValues={
                 ":s": "done",
                 ":u": processed_url,
@@ -246,7 +437,6 @@ def _handle_upscale(event, context):
             },
         )
     except Exception as exc:
-        # Non-fatal: job succeeded, just the log entry failed
         logger.error("DynamoDB final update failed for jobId=%s: %s", job_id, exc)
 
     logger.info(json.dumps({
@@ -258,7 +448,6 @@ def _handle_upscale(event, context):
         **img_meta,
     }))
 
-    # Response matches SCHEMA.md exactly
     return _response(200, event, {
         "jobId":     job_id,
         "outputUrl": _presign(processed_url),
@@ -270,38 +459,25 @@ def _handle_upscale(event, context):
 # ================================================================================
 
 def _handle_history(event, context):
-    params  = event.get("queryStringParameters") or {}
-    
-    # For Function URLs, parse rawQueryString
-    if not params and event.get("rawQueryString"):
-        qs = event.get("rawQueryString", "")
-        for pair in qs.split("&"):
-            if "=" in pair:
-                k, v = pair.split("=", 1)
-                params[k] = v
-    
-    # Extract user ID (from Cognito JWT in API Gateway if present, else fallback to query param)
-    auth_claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {}) or event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
-    user_id = auth_claims.get("sub") or (params.get("userId") or "").strip()
-
-    if not user_id:
-        return _response(400, event, {"error": "Missing required query param: userId"})
+    # -- Verify JWT and extract user ID -----------------------------------------------
+    user_id, error_response = _get_user_id_from_jwt(event)
+    if user_id is None:
+        return error_response
 
     try:
         result = _table.query(
             IndexName="UserHistoryIndex",
             KeyConditionExpression=Key("userId").eq(user_id),
-            ScanIndexForward=False,   # newest first (descending timestamp)
+            ScanIndexForward=False,
         )
     except Exception as exc:
         logger.exception("DynamoDB history query failed for userId=%s", user_id)
         return _response(500, event, {"error": "Failed to fetch history."})
 
-    # Response matches SCHEMA.md exactly
     jobs = [
         {
             "jobId":        item.get("jobId"),
-            "originalUrl":  item.get("originalUrl"),    # None for base64 uploads (MVP)
+            "originalUrl":  item.get("originalUrl"),
             "processedUrl": _presign(item.get("processedUrl")),
             "timestamp":    item.get("timestamp"),
             "status":       item.get("status"),
@@ -354,43 +530,17 @@ def _presign(url):
 
 
 def _preflight_response(event: dict) -> dict:
-    """
-    Return a correct CORS preflight (OPTIONS) response.
-    Must include Access-Control-Allow-Origin, -Methods, and -Headers.
-    The Vary header is required when echoing a specific origin (not wildcard).
-    """
-    origin = _get_cors_origin(event)
-    headers = {
-        "Content-Type":                     "application/json",
-        "Access-Control-Allow-Origin":       origin,
-        "Access-Control-Allow-Methods":      "GET,POST,OPTIONS",
-        "Access-Control-Allow-Headers":      "Content-Type,Authorization",
-        "Access-Control-Max-Age":            "86400",   # cache preflight 24h
-    }
-    if origin != "*":
-        headers["Vary"] = "Origin"
+    """Return a correct CORS preflight (OPTIONS) response."""
     return {
         "statusCode": 200,
-        "headers": headers,
+        "headers": _cors_headers(event),
         "body": "",
     }
 
 def _response(status_code: int, event: dict, body: dict) -> dict:
-    """
-    Build a JSON response with correct CORS headers for the requesting origin.
-    The event is required to read the Origin request header.
-    """
-    origin = _get_cors_origin(event)
-    headers = {
-        "Content-Type":                 "application/json",
-        "Access-Control-Allow-Origin":  origin,
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    }
-    if origin != "*":
-        headers["Vary"] = "Origin"
+    """Build a JSON response with correct CORS headers."""
     return {
         "statusCode": status_code,
-        "headers": headers,
+        "headers": _cors_headers(event),
         "body": json.dumps(body, default=_json_default),
     }

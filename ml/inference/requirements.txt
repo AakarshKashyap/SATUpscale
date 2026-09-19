@@ -22,3 +22,7 @@ numpy==1.26.2
 # boto3 is pre-installed in the Lambda Python 3.11 runtime.
 # Listed here only for local development/testing.
 boto3==1.34.0
+
+# JWT Token Validation
+PyJWT==2.14.0
+cryptography>=41.0.0
