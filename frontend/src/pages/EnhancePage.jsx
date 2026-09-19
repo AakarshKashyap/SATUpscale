@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
-import { getUserId } from "../services/user";
 import { upscaleImage } from "../services/api";
 
 export default function EnhancePage() {
@@ -13,7 +12,6 @@ export default function EnhancePage() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const userId = getUserId();
 
   const handleFile = (event) => {
     const selected = event.target.files[0];
@@ -37,7 +35,7 @@ export default function EnhancePage() {
     try {
       // Call the real backend upscale API.
       // The result must come from the backend response: { jobId, outputUrl, status }
-      const data = await upscaleImage(file, userId);
+      const data = await upscaleImage(file);
       setResultData(data);
     } catch (err) {
       // Surface the real error. Do NOT fall back to displaying the local

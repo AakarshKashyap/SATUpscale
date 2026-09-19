@@ -2,11 +2,10 @@
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
-import { getUserId } from "../services/user";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const userId = getUserId();
+  const userId = user?.sub || "Unavailable";
   const [copied, setCopied] = useState(false);
 
   const copyUserId = () => {

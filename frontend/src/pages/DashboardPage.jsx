@@ -3,20 +3,18 @@ import { Link } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
-import { getUserId } from "../services/user";
 import { getHistory } from "../services/api";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [recentJobs, setRecentJobs] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
-  const userId = getUserId();
 
   useEffect(() => {
     let isMounted = true;
     async function loadRecent() {
       try {
-        const data = await getHistory(userId);
+        const data = await getHistory();
         if (isMounted && data && Array.isArray(data.jobs)) {
           setRecentJobs(data.jobs.slice(0, 3));
         }
@@ -32,7 +30,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [userId]);
+  }, []);
 
   return (
     <div className="app">

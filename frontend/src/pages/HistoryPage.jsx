@@ -2,21 +2,19 @@
 import { Link } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
-import { getUserId } from "../services/user";
 import { getHistory } from "../services/api";
 
 export default function HistoryPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error] = useState("");
-  const userId = getUserId();
 
   useEffect(() => {
     let isMounted = true;
     async function fetchJobs() {
       setLoading(true);
       try {
-        const data = await getHistory(userId);
+        const data = await getHistory();
         if (isMounted && data && Array.isArray(data.jobs)) {
           setJobs(data.jobs);
         }
@@ -34,7 +32,7 @@ export default function HistoryPage() {
     return () => {
       isMounted = false;
     };
-  }, [userId]);
+  }, []);
 
   return (
     <div className="app">
@@ -59,7 +57,7 @@ export default function HistoryPage() {
           <div className="empty-result" style={{ minHeight: "300px" }}>
             <div className="loader"></div>
             <h3>Loading history...</h3>
-            <p>Fetching records for user {userId.slice(0, 8)}...</p>
+            <p>Fetching your enhancement records...</p>
           </div>
         ) : jobs.length > 0 ? (
           <div className="history-grid">

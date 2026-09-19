@@ -1,6 +1,7 @@
-﻿const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://0237u8c62.execute-api.us-east-1.amazonaws.com/prod";
+import { authService } from "./auth";
+
+const API_BASE_URL =
+  "https://0237u8c62a.execute-api.us-east-1.amazonaws.com/prod";
 
 /**
  * Converts a File or Blob into a raw base64 string without data prefix.
@@ -13,7 +14,6 @@ export function fileToBase64(file) {
     reader.onload = () => {
       const result = reader.result;
       if (typeof result === "string") {
-        // Strip data:image/...;base64, prefix
         const base64Index = result.indexOf(",");
         if (base64Index !== -1) {
           resolve(result.slice(base64Index + 1));
@@ -29,58 +29,104 @@ export function fileToBase64(file) {
   });
 }
 
-/**
- * Submits an image to the real backend upscale endpoint.
- * @param {File|Blob} file
- * @param {string} userId
- * @returns {Promise<{jobId: string, outputUrl: string, status: string}>}
- */
-export async function upscaleImage(file, userId) {
-  const base64Image = await fileToBase64(file);
+async function getAuthenticatedRequest() {
+  const user = await authService.getCurrentUser();
+  if (!user?.sub) {
+    throw new Error("Your session has expired. Please sign in again.");
+  }
 
-  const response = await fetch(`${API_BASE_URL}/upscale`, {
-    method: "POST",
+  const token = await authService.getAccessToken();
+  return { token, userId: user.sub };
+}
+
+async function requestWithAuth(url, options, errorLabel) {
+  let request = await getAuthenticatedRequest();
+  let response = await fetch(url, {
+    ...options,
     headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      userId,
-      image: base64Image
-    })
+      ...options.headers,
+      Authorization: `Bearer ${request.token}`
+    }
   });
+
+  if (response.status === 401) {
+    try {
+      request = {
+        ...request,
+        token: await authService.getAccessToken(true)
+      };
+      response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${request.token}`
+        }
+      });
+    } catch {
+      await authService.logout();
+      window.dispatchEvent(new Event("satup:auth-expired"));
+      throw new Error("Your session expired. Please sign in again.");
+    }
+  }
+
+  if (response.status === 401) {
+    await authService.logout();
+    window.dispatchEvent(new Event("satup:auth-expired"));
+  }
 
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     throw new Error(
-      `Upscale request failed (${response.status}): ${errText || response.statusText}`
+      `${errorLabel} (${response.status}): ${errText || response.statusText}`
     );
   }
+
+  return response;
+}
+
+/**
+ * Submits an image to the real backend upscale endpoint.
+ * @param {File|Blob} file
+ * @returns {Promise<{jobId: string, outputUrl: string, status: string}>}
+ */
+export async function upscaleImage(file) {
+  const base64Image = await fileToBase64(file);
+  await getAuthenticatedRequest();
+
+  const response = await requestWithAuth(
+    `${API_BASE_URL}/upscale`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image: base64Image
+      })
+    },
+    "Upscale request failed"
+  );
 
   return response.json();
 }
 
 /**
- * Fetches enhancement history for a user.
- * @param {string} userId
+ * Fetches enhancement history for the authenticated user.
  * @returns {Promise<{jobs: Array<{jobId: string, processedUrl: string, originalUrl?: string, timestamp: number, status: string}>}>}
  */
-export async function getHistory(userId) {
-  const response = await fetch(
+export async function getHistory() {
+  const { userId } = await getAuthenticatedRequest();
+
+  const response = await requestWithAuth(
     `${API_BASE_URL}/history?userId=${encodeURIComponent(userId)}`,
     {
       method: "GET",
       headers: {
         Accept: "application/json"
       }
-    }
+    },
+    "Failed to fetch history"
   );
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "");
-    throw new Error(
-      `Failed to fetch history (${response.status}): ${errText || response.statusText}`
-    );
-  }
 
   return response.json();
 }

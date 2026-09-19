@@ -1,70 +1,167 @@
-﻿const AUTH_STORAGE_KEY = "satup_auth_user";
+import { Amplify } from "aws-amplify";
+import {
+  confirmSignUp,
+  fetchAuthSession,
+  getCurrentUser,
+  signIn,
+  signOut,
+  signUp
+} from "aws-amplify/auth";
 
-/**
- * Authentication service abstraction.
- * Provides a clean interface for session management, ready to plug in AWS Cognito
- * without exposing client secrets or scattering temporary logic.
- */
+const appOrigin =
+  typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+
+const cognitoConfig = {
+  Auth: {
+    Cognito: {
+      userPoolId: "us-east-1_X6Xtv869G",
+      userPoolClientId: "2akj9d7fa1fbnn5p08m017daap",
+      loginWith: {
+        email: true,
+        oauth: {
+          domain: "satup-setup.auth.us-east-1.amazoncognito.com",
+          scopes: ["openid", "email", "profile"],
+          redirectSignIn: [`${appOrigin}/login`],
+          redirectSignOut: [`${appOrigin}/login`],
+          responseType: "code"
+        }
+      }
+    }
+  }
+};
+
+Amplify.configure(cognitoConfig);
+
+function getErrorMessage(error, fallback) {
+  if (error?.name === "NotAuthorizedException") {
+    return "Incorrect email or password.";
+  }
+  if (error?.name === "UserNotFoundException") {
+    return "No SATUpscale account was found for this email.";
+  }
+  if (error?.name === "UsernameExistsException") {
+    return "An account already exists for this email.";
+  }
+  if (error?.name === "CodeMismatchException") {
+    return "The confirmation code is incorrect.";
+  }
+  if (error?.name === "ExpiredCodeException") {
+    return "That confirmation code has expired. Request a new code.";
+  }
+  return error?.message || fallback;
+}
+
+async function getSessionUser() {
+  const currentUser = await getCurrentUser();
+  const session = await fetchAuthSession();
+  const claims = session.tokens?.idToken?.payload || {};
+
+  return {
+    id: currentUser.userId,
+    sub: currentUser.userId,
+    email: claims.email || currentUser.username,
+    name: claims.name || claims.email || currentUser.username
+  };
+}
+
 export const authService = {
-  getCurrentUser() {
+  async getCurrentUser() {
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : null;
+      return await getSessionUser();
     } catch {
       return null;
     }
   },
 
-  isAuthenticated() {
-    const user = this.getCurrentUser();
-    return Boolean(user && user.token);
-  },
-
   async login(email, password) {
-    // In production, this connects to AWS Cognito InitiateAuth / Token exchange.
-    // For the current MVP stage, we provide a clean, secure local session abstraction.
     if (!email || !password) {
       throw new Error("Email and password are required.");
     }
 
-    // Basic format validation
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      throw new Error("Please enter a valid email address.");
+    try {
+      const result = await signIn({
+        username: email.trim(),
+        password
+      });
+
+      if (!result.isSignedIn) {
+        throw new Error(
+          "Additional sign-in verification is required for this account."
+        );
+      }
+
+      return await getSessionUser();
+    } catch (error) {
+      throw new Error(getErrorMessage(error, "Failed to sign in."), {
+        cause: error
+      });
     }
-
-    const user = {
-      id: "usr_" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Date.now()),
-      email,
-      name: email.split("@")[0],
-      token: "satup_jwt_" + Date.now(),
-      createdAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    return user;
   },
 
   async signup(name, email, password) {
     if (!email || !password) {
       throw new Error("Email and password are required.");
     }
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters long.");
+
+    try {
+      const result = await signUp({
+        username: email.trim(),
+        password,
+        options: {
+          userAttributes: {
+            email: email.trim(),
+            ...(name?.trim() ? { name: name.trim() } : {})
+          }
+        }
+      });
+
+      if (result.nextStep.signUpStep === "CONFIRM_SIGN_UP") {
+        return {
+          needsConfirmation: true,
+          email: email.trim()
+        };
+      }
+
+      return await this.login(email, password);
+    } catch (error) {
+      throw new Error(getErrorMessage(error, "Failed to create account."), {
+        cause: error
+      });
     }
-
-    const user = {
-      id: "usr_" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Date.now()),
-      email,
-      name: name?.trim() || email.split("@")[0],
-      token: "satup_jwt_" + Date.now(),
-      createdAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    return user;
   },
 
-  logout() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  async confirmSignup(email, confirmationCode) {
+    if (!confirmationCode?.trim()) {
+      throw new Error("Enter the confirmation code sent to your email.");
+    }
+
+    try {
+      await confirmSignUp({
+        username: email.trim(),
+        confirmationCode: confirmationCode.trim()
+      });
+      return { confirmed: true };
+    } catch (error) {
+      throw new Error(getErrorMessage(error, "Failed to confirm account."), {
+        cause: error
+      });
+    }
+  },
+
+  async getAccessToken(forceRefresh = false) {
+    const session = await fetchAuthSession({ forceRefresh });
+    const token = session.tokens?.accessToken?.toString();
+    if (!token) {
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+    return token;
+  },
+
+  async refreshUser() {
+    return getSessionUser();
+  },
+
+  async logout() {
+    await signOut();
   }
 };

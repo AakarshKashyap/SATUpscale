@@ -5,12 +5,14 @@ import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
 
 export default function SignupPage() {
-  const { signup, isAuthenticated, loading } = useAuth();
+  const { signup, confirmSignup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,6 +26,22 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
 
+    if (awaitingConfirmation) {
+      try {
+        setSubmitting(true);
+        await confirmSignup(email, confirmationCode);
+        navigate("/login", {
+          replace: true,
+          state: { message: "Account confirmed. Sign in to continue." }
+        });
+      } catch (err) {
+        setError(err.message || "Failed to confirm account.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       setError("Please fill in all fields.");
       return;
@@ -36,8 +54,13 @@ export default function SignupPage() {
 
     try {
       setSubmitting(true);
-      await signup(name, email, password);
-      navigate("/dashboard", { replace: true });
+      const result = await signup(name, email, password);
+      if (result?.needsConfirmation) {
+        setAwaitingConfirmation(true);
+        setError("");
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err.message || "Failed to create account.");
     } finally {
@@ -53,14 +76,18 @@ export default function SignupPage() {
         <div className="auth-card">
           <div className="auth-header">
             <span className="section-label">REGISTRATION</span>
-            <h1>Create your account</h1>
-            <p>Get started with AI satellite super-resolution.</p>
+            <h1>{awaitingConfirmation ? "Confirm your account" : "Create your account"}</h1>
+            <p>
+              {awaitingConfirmation
+                ? "Enter the verification code sent to your email."
+                : "Get started with AI satellite super-resolution."}
+            </p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
+            {!awaitingConfirmation && <div className="form-group">
               <label htmlFor="name">Full Name</label>
               <input
                 id="name"
@@ -70,9 +97,9 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
               />
-            </div>
+            </div>}
 
-            <div className="form-group">
+            {!awaitingConfirmation && <div className="form-group">
               <label htmlFor="email">Email address</label>
               <input
                 id="email"
@@ -83,9 +110,9 @@ export default function SignupPage() {
                 autoComplete="email"
                 required
               />
-            </div>
+            </div>}
 
-            <div className="form-group">
+            {!awaitingConfirmation && <div className="form-group">
               <label htmlFor="password">Password</label>
               <input
                 id="password"
@@ -96,14 +123,33 @@ export default function SignupPage() {
                 autoComplete="new-password"
                 required
               />
-            </div>
+            </div>}
+
+            {awaitingConfirmation && <div className="form-group">
+              <label htmlFor="confirmation-code">Confirmation code</label>
+              <input
+                id="confirmation-code"
+                type="text"
+                placeholder="Enter your code"
+                value={confirmationCode}
+                onChange={(e) => setConfirmationCode(e.target.value)}
+                autoComplete="one-time-code"
+                required
+              />
+            </div>}
 
             <button
               type="submit"
               className="primary-btn auth-submit-btn"
               disabled={submitting || loading}
             >
-              {submitting ? "Creating account..." : "Get Started →"}
+              {submitting
+                ? awaitingConfirmation
+                  ? "Confirming account..."
+                  : "Creating account..."
+                : awaitingConfirmation
+                  ? "Confirm Account →"
+                  : "Get Started →"}
             </button>
           </form>
 

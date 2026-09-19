@@ -3,15 +3,28 @@ import { AuthContext } from "./auth-context";
 import { authService } from "../services/auth";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => authService.getCurrentUser());
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleStorage = () => {
-      setUser(authService.getCurrentUser());
+    let active = true;
+
+    authService.getCurrentUser().then((currentUser) => {
+      if (active) {
+        setUser(currentUser);
+        setLoading(false);
+      }
+    });
+
+    const handleAuthExpired = () => {
+      if (active) setUser(null);
     };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("satup:auth-expired", handleAuthExpired);
+
+    return () => {
+      active = false;
+      window.removeEventListener("satup:auth-expired", handleAuthExpired);
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -29,26 +42,37 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const newUser = await authService.signup(name, email, password);
-      setUser(newUser);
+      if (!newUser?.needsConfirmation) {
+        setUser(newUser);
+      }
       return newUser;
     } finally {
       setLoading(false);
     }
   };
 
+  const confirmSignup = async (email, confirmationCode) => {
+    setLoading(true);
+    try {
+      return await authService.confirmSignup(email, confirmationCode);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
-    authService.logout();
-    setUser(null);
+    return authService.logout().finally(() => setUser(null));
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: Boolean(user && user.token),
+        isAuthenticated: Boolean(user),
         loading,
         login,
         signup,
+        confirmSignup,
         logout
       }}
     >
