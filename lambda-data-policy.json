@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "S3ReadWrite",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": "arn:aws:s3:::srm-upscaler-outputs/*"
+    },
+    {
+      "Sid": "DynamoDBReadWrite",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:519725697841:table/SRMJobs",
+        "arn:aws:dynamodb:us-east-1:519725697841:table/SRMJobs/index/UserHistoryIndex"
+      ]
+    }
+  ]
+}

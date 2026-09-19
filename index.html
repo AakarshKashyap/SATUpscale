@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TempleVerse — Discover Every Temple in Telangana</title>
+<meta name="description" content="TempleVerse is your complete guide to the temples of Telangana — from grand pilgrimage centres to hidden village shrines.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="home">
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-spinner-om">ॐ</div>
+  <div class="loader-spinner"></div>
+</div>
+
+<!-- Navbar -->
+<header class="navbar">
+  <div class="container">
+    <a href="index.html" class="logo"><i class="fa-solid fa-gopuram"></i> Temple<span>Verse</span></a>
+    <nav class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="temples.html">Explore Temples</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn dark-toggle" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+      <a href="favorites.html" class="icon-btn" aria-label="Favorites"><i class="fa-solid fa-heart"></i></a>
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Sign Up</a>
+      <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <div class="container">
+    <a href="index.html">Home</a>
+    <a href="temples.html">Explore Temples</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="faq.html">FAQ</a>
+    <a href="favorites.html">Favorites</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Sign Up</a>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-slider">
+    <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=1600&auto=format&fit=crop')"></div>
+    <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1590077428593-a55bb07c4665?q=80&w=1600&auto=format&fit=crop')"></div>
+    <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1609766418204-4381d3011d40?q=80&w=1600&auto=format&fit=crop')"></div>
+    <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1600100096466-1f9c8d8b7f6c?q=80&w=1600&auto=format&fit=crop')"></div>
+  </div>
+  <div class="container hero-content">
+    <span class="eyebrow anim-fade-up"><i class="fa-solid fa-om"></i> Telangana's Complete Temple Guide</span>
+    <h1 class="anim-fade-up delay-1">Discover the Sacred <span>Soul of Telangana</span></h1>
+    <p class="anim-fade-up delay-2">From the golden shrines of Yadagirigutta to quiet village temples tucked away in the countryside — explore every sacred site, district by district, mandal by mandal.</p>
+    <div class="search-bar anim-fade-up delay-3">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Search by temple, deity, village or district..." data-search-suggest>
+      <button class="btn btn-primary" onclick="window.location.href='temples.html'">Explore</button>
+    </div>
+  </div>
+  <div class="hero-slider-dots"></div>
+  <a href="#featured" class="hero-scroll-cta"><i class="fa-solid fa-chevron-down"></i> Scroll to Explore</a>
+</section>
+
+<!-- Featured Temples -->
+<section class="section" id="featured">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Handpicked</span>
+      <h2>Featured Telangana Temples</h2>
+      <p>Iconic shrines that define the state's spiritual landscape — start your journey here.</p>
+    </div>
+    <div class="temple-grid" id="featuredGrid"></div>
+    <div class="text-center mt-4">
+      <a href="temples.html" class="btn btn-outline">View All Temples <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- Categories -->
+<section class="section" style="background:var(--color-bg-alt);">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Browse By</span>
+      <h2>Temple Categories</h2>
+      <p>Explore temples grouped by tradition and significance.</p>
+    </div>
+    <div class="category-grid">
+      <div class="category-card reveal"><div class="icon-wrap"><i class="fa-solid fa-fire"></i></div><h4>Shaivite</h4><p>Lord Shiva shrines</p></div>
+      <div class="category-card reveal delay-1"><div class="icon-wrap"><i class="fa-solid fa-om"></i></div><h4>Vaishnavite</h4><p>Vishnu &amp; avatars</p></div>
+      <div class="category-card reveal delay-2"><div class="icon-wrap"><i class="fa-solid fa-hands-praying"></i></div><h4>Shaktipeeth</h4><p>Goddess shrines</p></div>
+      <div class="category-card reveal delay-3"><div class="icon-wrap"><i class="fa-solid fa-people-group"></i></div><h4>Folk Deity</h4><p>Local &amp; folk gods</p></div>
+      <div class="category-card reveal delay-4"><div class="icon-wrap"><i class="fa-solid fa-landmark"></i></div><h4>Heritage</h4><p>Historic complexes</p></div>
+      <div class="category-card reveal delay-5"><div class="icon-wrap"><i class="fa-solid fa-village"></i></div><h4>Village Goddess</h4><p>Grama devatas</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="section stats-section">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal"><h3 data-count="850" data-suffix="+">0</h3><p>Temples Listed</p></div>
+      <div class="stat-item reveal delay-1"><h3 data-count="33">0</h3><p>Districts Covered</p></div>
+      <div class="stat-item reveal delay-2"><h3 data-count="120" data-suffix="k+">0</h3><p>Monthly Explorers</p></div>
+      <div class="stat-item reveal delay-3"><h3 data-count="4600" data-suffix="+">0</h3><p>Villages Mapped</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Why TempleVerse -->
+<section class="section" style="background:var(--color-bg-alt);">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Why Us</span>
+      <h2>Why TempleVerse</h2>
+      <p>Built for pilgrims, travellers, and researchers alike.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="icon-wrap"><i class="fa-solid fa-map-location-dot"></i></div>
+        <h4>District → Mandal → Village Navigation</h4>
+        <p>Drill down through Telangana's administrative structure to find even the smallest village temple.</p>
+      </div>
+      <div class="feature-card reveal delay-1">
+        <div class="icon-wrap"><i class="fa-solid fa-circle-info"></i></div>
+        <h4>Verified Temple Information</h4>
+        <p>Timings, entry fees, dress codes, and festival calendars — all in one place, always up to date.</p>
+      </div>
+      <div class="feature-card reveal delay-2">
+        <div class="icon-wrap"><i class="fa-solid fa-heart"></i></div>
+        <h4>Save Your Favorites</h4>
+        <p>Bookmark temples, plan pilgrimage routes, and revisit them anytime from your profile.</p>
+      </div>
+      <div class="feature-card reveal delay-3">
+        <div class="icon-wrap"><i class="fa-solid fa-star"></i></div>
+        <h4>Community Reviews</h4>
+        <p>Real experiences from fellow devotees to help you plan the perfect visit.</p>
+      </div>
+      <div class="feature-card reveal delay-4">
+        <div class="icon-wrap"><i class="fa-solid fa-mobile-screen"></i></div>
+        <h4>Built for Every Device</h4>
+        <p>A fast, beautiful experience whether you're on desktop, tablet, or mobile.</p>
+      </div>
+      <div class="feature-card reveal delay-5">
+        <div class="icon-wrap"><i class="fa-solid fa-language"></i></div>
+        <h4>Local Context, Global Access</h4>
+        <p>Deeply rooted in Telangana's culture, accessible to explorers from anywhere in the world.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="section">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Voices</span>
+      <h2>What Devotees Say</h2>
+      <p>Stories from people who found their way with TempleVerse.</p>
+    </div>
+    <div class="testimonial-track reveal">
+      <div class="testimonial-card">
+        <div class="rating"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <p class="testimonial-quote">We found a beautiful village temple near Sircilla that isn't on any map — TempleVerse's mandal-level search made our family pilgrimage unforgettable.</p>
+        <div class="testimonial-user">
+          <img src="https://i.pravatar.cc/80?img=32" alt="Devotee">
+          <div><h5>Ramesh Reddy</h5><span>Hyderabad</span></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="rating"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+        <p class="testimonial-quote">The temple timing and dress code details saved us a wasted trip to Basara. Simple, accurate, and beautifully designed.</p>
+        <div class="testimonial-user">
+          <img src="https://i.pravatar.cc/80?img=47" alt="Devotee">
+          <div><h5>Lakshmi Devi</h5><span>Warangal</span></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="rating"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <p class="testimonial-quote">As a researcher documenting Kakatiya-era shrines, this platform's depth of village-level data has been invaluable.</p>
+        <div class="testimonial-user">
+          <img src="https://i.pravatar.cc/80?img=12" alt="Devotee">
+          <div><h5>Dr. Anitha Rao</h5><span>Karimnagar</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Newsletter -->
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <div class="newsletter reveal">
+      <div>
+        <h3 style="font-size:1.5rem;margin-bottom:8px;">Get Festival &amp; Temple Updates</h3>
+        <p style="color:var(--color-text-muted);">Subscribe for Jathara dates, festival calendars, and newly added temples.</p>
+      </div>
+      <form class="newsletter-form" onsubmit="event.preventDefault(); showToast('Subscribed successfully!'); this.reset();">
+        <input type="email" placeholder="Enter your email" required>
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Preview -->
+<section class="section" style="background:var(--color-bg-alt);">
+  <div class="container" style="max-width:820px;">
+    <div class="section-head reveal">
+      <span class="eyebrow">Questions</span>
+      <h2>Frequently Asked</h2>
+    </div>
+    <div class="reveal">
+      <div class="accordion-item">
+        <div class="accordion-header">Is TempleVerse free to use? <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="accordion-body"><p>Yes, browsing temple listings, details, and reviews is completely free for all users.</p></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">How do you organize temples by location? <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="accordion-body"><p>We follow Telangana's official District → Mandal → Village structure so you can drill down to hyper-local shrines.</p></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">Can I contribute information about my village temple? <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="accordion-body"><p>Absolutely — registered users will soon be able to submit new temple listings for review.</p></div>
+      </div>
+    </div>
+    <div class="text-center mt-4"><a href="faq.html" class="btn-ghost">View all FAQs <i class="fa-solid fa-arrow-right"></i></a></div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="logo" style="color:#fff;"><i class="fa-solid fa-gopuram"></i> Temple<span style="color:var(--color-primary-light);">Verse</span></a>
+        <p class="mt-2">Your complete digital guide to discovering every temple across Telangana — from grand pilgrimage centres to quiet village shrines.</p>
+        <div class="footer-social">
+          <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#"><i class="fa-brands fa-twitter"></i></a>
+          <a href="#"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+      </div>
+      <div>
+        <h5>Explore</h5>
+        <ul>
+          <li><a href="temples.html">All Temples</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="favorites.html">Favorites</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Account</h5>
+        <ul>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+          <li><a href="profile.html">Profile</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <ul>
+          <li><i class="fa-solid fa-location-dot"></i> Hyderabad, Telangana, India</li>
+          <li><i class="fa-solid fa-phone"></i> +91 98765 43210</li>
+          <li><i class="fa-solid fa-envelope"></i> hello@templeverse.in</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span class="current-year"></span> TempleVerse. All rights reserved.</span>
+      <span>Made with devotion in Telangana</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" aria-label="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/slider.js"></script>
+<script src="js/search.js"></script>
+<script src="js/favorites.js"></script>
+<script src="js/darkmode.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.querySelector('#featuredGrid');
+    if(grid && typeof TEMPLE_DATA !== 'undefined'){
+      const featured = [...TEMPLE_DATA].sort((a,b) => b.rating - a.rating).slice(0, 6);
+      grid.innerHTML = featured.map(t => window.templeCardHTML(t)).join('');
+      grid.querySelectorAll('.fav-btn[data-temple-id]').forEach(btn => {
+        const id = parseInt(btn.dataset.templeId, 10);
+        if(window.isFavorite?.(id)) btn.classList.add('active');
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); window.toggleFavorite(id, btn); });
+      });
+    }
+  });
+</script>
+</body>
+</html>
