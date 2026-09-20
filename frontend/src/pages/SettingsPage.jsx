@@ -1,12 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
+import { getUserStats } from "../services/api";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const userId = user?.sub || "Unavailable";
   const [copied, setCopied] = useState(false);
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getUserStats()
+      .then((data) => {
+        if (isMounted && data) {
+          setStats(data);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const copyUserId = () => {
     navigator.clipboard.writeText(userId);
@@ -50,6 +67,40 @@ export default function SettingsPage() {
                 <button onClick={copyUserId} className="secondary-btn" style={{ padding: "6px 12px", fontSize: "12px" }}>
                   {copied ? "Copied!" : "Copy ID"}
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* USAGE & PERFORMANCE STATS SECTION */}
+          <div className="settings-card">
+            <h3>Pipeline Usage & Statistics</h3>
+            <p className="settings-card-desc">Aggregated inference telemetry from the backend API.</p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", marginTop: "14px" }}>
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ fontSize: "11px", opacity: 0.65, textTransform: "uppercase" }}>Total Images</span>
+                <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>{stats?.totalImages ?? 0}</div>
+              </div>
+
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ fontSize: "11px", opacity: 0.65, textTransform: "uppercase" }}>Avg Latency</span>
+                <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>
+                  {stats?.averageProcessingTimeMs ? `${(stats.averageProcessingTimeMs / 1000).toFixed(2)}s` : "N/A"}
+                </div>
+              </div>
+
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ fontSize: "11px", opacity: 0.65, textTransform: "uppercase" }}>Avg Scale Factor</span>
+                <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>
+                  {stats?.averageScaleFactor ? `${stats.averageScaleFactor}×` : "8×"}
+                </div>
+              </div>
+
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ fontSize: "11px", opacity: 0.65, textTransform: "uppercase" }}>Avg Input Quality</span>
+                <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px", color: (stats?.averageInputQuality ?? 70) >= 60 ? "#4ade80" : "#facc15" }}>
+                  {stats?.averageInputQuality ? `${stats.averageInputQuality}/100` : "N/A"}
+                </div>
               </div>
             </div>
           </div>

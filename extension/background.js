@@ -86,6 +86,7 @@ function extractCognitoFromLocalStorage() {
       if (key.includes("CognitoIdentityServiceProvider") && key.endsWith(".idToken")) {
         const idToken = localStorage.getItem(key);
         if (idToken) {
+          token = idToken;
           const parts = idToken.split(".");
           if (parts.length === 3) {
             const payload = JSON.parse(atob(parts[1]));
@@ -95,6 +96,23 @@ function extractCognitoFromLocalStorage() {
               sub: payload.sub || ""
             };
           }
+          break;
+        }
+      }
+    }
+
+    if (!token) {
+      const idToken = localStorage.getItem("satup_id_token");
+      if (idToken) {
+        token = idToken;
+        const parts = idToken.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          user = {
+            name: payload.name || payload.email?.split("@")[0] || payload["cognito:username"] || "User",
+            email: payload.email || "",
+            sub: payload.sub || ""
+          };
         }
       }
     }

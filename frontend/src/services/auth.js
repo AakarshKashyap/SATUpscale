@@ -150,13 +150,67 @@ export const authService = {
     }
   },
 
+  /**
+   * Retrieves the Cognito IdToken.
+   * NOTE: We specifically use IdToken (NOT AccessToken) because AWS API Gateway
+   * COGNITO_USER_POOLS authorizer requires the ID token.
+   */
   async getIdToken(forceRefresh = false) {
     const session = await fetchAuthSession({ forceRefresh });
+    // Strictly extract IdToken, never AccessToken
     const token = session.tokens?.idToken?.toString();
     if (!token) {
       throw new Error("Your session has expired. Please sign in again.");
     }
+
+    // Securely cache IdToken in localStorage and sessionStorage for quick access
+    // and seamless synchronization with the browser extension
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("satup_id_token", token);
+        window.sessionStorage.setItem("satup_id_token", token);
+      }
+    } catch {
+      // Storage access may be restricted in private browsing mode
+    }
+
     return token;
+  },
+
+  /**
+   * Retrieves cached IdToken from localStorage or sessionStorage.
+   */
+  getStoredIdToken() {
+    if (typeof window === "undefined") return null;
+    try {
+      const token =
+        window.localStorage.getItem("satup_id_token") ||
+        window.sessionStorage.getItem("satup_id_token");
+      if (token) return token;
+
+      // Fallback: check Amplify standard localStorage keys
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (
+          key &&
+          key.includes("CognitoIdentityServiceProvider") &&
+          key.endsWith(".idToken")
+        ) {
+          return window.localStorage.getItem(key);
+        }
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  },
+
+  /**
+   * Returns current token payload ensuring only IdToken is provided.
+   */
+  async getTokens() {
+    const idToken = await this.getIdToken();
+    return { idToken };
   },
 
   async refreshUser() {
@@ -164,6 +218,16 @@ export const authService = {
   },
 
   async logout() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("satup_id_token");
+        window.sessionStorage.removeItem("satup_id_token");
+        window.localStorage.removeItem("satup_user");
+      }
+    } catch {
+      // ignore storage access issues
+    }
     await signOut();
   }
 };
+

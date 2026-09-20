@@ -61,47 +61,60 @@ export default function HistoryPage() {
           </div>
         ) : jobs.length > 0 ? (
           <div className="history-grid">
-            {jobs.map((job) => (
-              <div key={job.jobId} className="history-card">
-                <div className="history-image">
-                  {job.processedUrl ? (
-                    <img
-                      src={job.processedUrl}
-                      alt="Processed satellite imagery"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <span>8×</span>
-                  )}
-                  <span>8×</span>
-                </div>
+            {jobs.map((job) => {
+              const scale =
+                job.actualScaleFactor ||
+                job.actualScale ||
+                job.scaleFactor ||
+                8;
+              const quality =
+                job.inputQuality ??
+                job.qualityAssessment?.inputQualityScore ??
+                null;
 
-                <div className="history-info">
-                  <div>
-                    <h3 style={{ fontSize: "14px", wordBreak: "break-all" }}>
-                      {job.jobId ? job.jobId.slice(0, 12) + "..." : "Job"}
-                    </h3>
-                    <p>
-                      {job.timestamp
-                        ? new Date(job.timestamp * 1000).toLocaleString()
-                        : "Timestamp unavailable"}
-                    </p>
+              return (
+                <div key={job.jobId} className="history-card">
+                  <div className="history-image">
+                    {job.processedUrl ? (
+                      <img
+                        src={job.processedUrl}
+                        alt="Processed satellite imagery"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span>{scale}×</span>
+                    )}
+                    <span>{scale}×</span>
                   </div>
 
-                  <Link
-                    to={`/result/${job.jobId}${
-                      job.processedUrl
-                        ? `?image=${encodeURIComponent(job.processedUrl)}`
-                        : ""
-                    }`}
-                    className="status"
-                    title="View result"
-                  >
-                    ✓
-                  </Link>
+                  <div className="history-info">
+                    <div>
+                      <h3 style={{ fontSize: "14px", wordBreak: "break-all" }}>
+                        {job.jobId ? job.jobId.slice(0, 12) + "..." : "Job"}
+                      </h3>
+                      <p>
+                        {job.timestamp
+                          ? new Date(job.timestamp * 1000).toLocaleString()
+                          : "Timestamp unavailable"}
+                      </p>
+                      {quality !== null && (
+                        <p style={{ fontSize: "11px", color: quality >= 60 ? "#4ade80" : "#facc15", marginTop: "2px" }}>
+                          Quality: {quality}/100
+                        </p>
+                      )}
+                    </div>
+
+                    <Link
+                      to={`/result/${job.jobId}`}
+                      className="status"
+                      title="View fresh result"
+                    >
+                      ✓
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="empty-result" style={{ minHeight: "350px", borderRadius: "16px", border: "1px solid var(--color-border)", padding: "40px" }}>

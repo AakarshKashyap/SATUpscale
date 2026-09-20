@@ -34,6 +34,10 @@
     }
 
     if (!idToken) {
+      idToken = localStorage.getItem("satup_id_token");
+    }
+
+    if (!idToken) {
       console.log("[SATUpscale] No Cognito ID token found.");
       return;
     }
