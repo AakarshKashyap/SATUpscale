@@ -31,6 +31,7 @@ async function verifyAndSyncWebSession() {
       url: [
         "https://*.satupscale.com/*",
         "https://satupscale.com/*",
+        "https://*.amplifyapp.com/*",
         "http://localhost:5173/*",
         "http://127.0.0.1:5173/*"
       ]

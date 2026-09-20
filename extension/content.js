@@ -10,7 +10,8 @@
   function syncAuthSession() {
     if (
       !window.location.host.includes("localhost:5173") &&
-      !window.location.host.includes("satupscale")
+      !window.location.host.includes("satupscale") &&
+      !window.location.host.includes("amplifyapp.com")
     ) {
       return;
     }

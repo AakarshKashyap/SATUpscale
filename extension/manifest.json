@@ -15,7 +15,8 @@
     "https://0237u8c62a.execute-api.us-east-1.amazonaws.com/*",
     "http://localhost:5173/*",
     "http://127.0.0.1:5173/*",
-    "https://*.satupscale.com/*"
+    "https://*.satupscale.com/*",
+    "https://*.amplifyapp.com/*"
   ],
   "background": {
     "service_worker": "background.js"
