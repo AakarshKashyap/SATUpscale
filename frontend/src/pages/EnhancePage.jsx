@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
@@ -60,7 +60,7 @@ export default function EnhancePage() {
     resultData && resultData.outputUrl && resultData.status === "done";
 
   return (
-    <div className="app">
+    <div className="app-shell dark-theme-root aerospace-aesthetic">
       <AppNavbar />
 
       <main className="dashboard-section" style={{ minHeight: "80vh" }}>

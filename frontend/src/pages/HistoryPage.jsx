@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
@@ -35,7 +35,7 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="app">
+    <div className="app-shell dark-theme-root aerospace-aesthetic">
       <AppNavbar />
 
       <main className="history-section" style={{ minHeight: "80vh" }}>
@@ -104,7 +104,7 @@ export default function HistoryPage() {
             ))}
           </div>
         ) : (
-          <div className="empty-result" style={{ minHeight: "350px", background: "white", borderRadius: "16px", border: "1px solid #e4e6e9", padding: "40px" }}>
+          <div className="empty-result" style={{ minHeight: "350px", borderRadius: "16px", border: "1px solid var(--color-border)", padding: "40px" }}>
             <div className="empty-icon">✦</div>
             <h3>No enhancement history yet</h3>
             <p>
