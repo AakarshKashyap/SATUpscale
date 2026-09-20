@@ -482,7 +482,7 @@ def _handle_upscale(event, context):
         return _response(500, event, {"error": f"Inference failed: {exc}"})
 
     processing_ms = int((time.time() - t_start) * 1000)
-    actual_scale_factor = img_meta.get("actualScale", requested_scale_factor or 8)
+    actual_scale_factor = img_meta.get("actualScale") or requested_scale_factor or img_meta.get("scaleFactor") or 2
 
     # -- Save output to S3 -------------------------------------------------------
     try:
@@ -717,8 +717,8 @@ def _handle_user_stats(event, context):
         ]
         
         scale_factors = [
-            int(i.get("actualScaleFactor", i.get("scaleFactor", 8)))
-            for i in completed_items if "scaleFactor" in i or "actualScaleFactor" in i
+            int(i.get("actualScaleFactor") or i.get("scaleFactor"))
+            for i in completed_items if i.get("scaleFactor") or i.get("actualScaleFactor")
         ]
         
         return _response(200, event, {
@@ -726,7 +726,7 @@ def _handle_user_stats(event, context):
             "totalImages": len(completed_items),
             "totalProcessingTimeMs": total_processing_time,
             "averageProcessingTimeMs": int(total_processing_time / len(completed_items)) if completed_items else 0,
-            "averageScaleFactor": round(sum(scale_factors) / len(scale_factors), 2) if scale_factors else 8,
+            "averageScaleFactor": round(sum(scale_factors) / len(scale_factors), 2) if scale_factors else 0,
             "averageInputQuality": round(sum(quality_scores) / len(quality_scores), 1) if quality_scores else 0,
         })
     except Exception as exc:

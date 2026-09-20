@@ -20,35 +20,15 @@ echo "Using Account: $ACCOUNT_ID | Region: $REGION"
 echo "Creating S3 bucket: $BUCKET_NAME"
 aws s3 mb s3://$BUCKET_NAME --region $REGION
 
-# Allow public policies to be attached (needed before adding bucket policy)
+# Block all public access - objects are private and accessed strictly via presigned URLs
 aws s3api put-public-access-block \
   --bucket $BUCKET_NAME \
   --public-access-block-configuration \
-  "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+  "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+echo "S3 Block Public Access enabled (private bucket)"
 
 # ------------------------------------------------------------
-# 2. BUCKET POLICY - public read on /output/* only
-# ------------------------------------------------------------
-cat > bucket-policy.json <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicReadOutputs",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::$BUCKET_NAME/output/*"
-    }
-  ]
-}
-EOF
-
-aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy file://bucket-policy.json
-echo "Bucket policy applied (public read on /output/*)"
-
-# ------------------------------------------------------------
-# 3. CORS CONFIG - allow extension/website to fetch images
+# 2. CORS CONFIG - allow extension/website to fetch images
 # ------------------------------------------------------------
 cat > cors-config.json <<EOF
 {
@@ -67,7 +47,7 @@ aws s3api put-bucket-cors --bucket $BUCKET_NAME --cors-configuration file://cors
 echo "CORS applied"
 
 # ------------------------------------------------------------
-# 4. LIFECYCLE RULE - auto-delete outputs after 2 days (cost control)
+# 3. LIFECYCLE RULE - auto-delete assets after 2 days (48h cost control)
 # ------------------------------------------------------------
 cat > lifecycle-config.json <<EOF
 {
@@ -79,8 +59,8 @@ cat > lifecycle-config.json <<EOF
       "Expiration": { "Days": 2 }
     },
     {
-      "ID": "ExpireInputs",
-      "Filter": { "Prefix": "input/" },
+      "ID": "ExpireOriginals",
+      "Filter": { "Prefix": "original/" },
       "Status": "Enabled",
       "Expiration": { "Days": 2 }
     }
