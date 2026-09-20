@@ -8,6 +8,7 @@ Welcome to the comprehensive documentation center for SATUpscale, an end-to-end 
 - [**System Architecture & Workflow Flowcharts**](FLOWCHARTS.md): Complete visual flowcharts covering system architecture, ML inference pipeline, request lifecycle state machine, frontend journey, and multi-tenant security isolation.
 - [**Data Layer & REST API Contract**](../SCHEMA.md): Complete schema documentation for Amazon S3 key partitioning, DynamoDB job tables, and REST endpoints.
 - [**CORS Setup Guide**](CORS_SETUP.md): API Gateway and S3 Cross-Origin Resource Sharing configuration.
+- [**AWS Amplify Git Deployment Guide**](AMPLIFY_DEPLOY_GUIDE.md): Complete step-by-step instructions for continuous deployment via GitHub.
 
 ---
 
