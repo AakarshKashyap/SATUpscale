@@ -7,7 +7,7 @@ A modern, responsive geospatial intelligence and satellite image super-resolutio
 ## Features
 
 - **Interactive 3D Earth Globe**: Rendered via Three.js with realistic atmospheric glow, particle fields, and coordinate markers.
-- **Dynamic Satellite Super-Resolution**: Direct upload interface with user-selectable scaling factors (`2x`, `4x`, `8x`, `16x`, `32x`, or auto-cap at 2048px).
+- **Dynamic Satellite Super-Resolution**: Direct upload interface with user-selectable scaling factors (`2x`, `4x`, `8x`, `16x`, or auto-cap at 2048px).
 - **Interactive Before / After Comparison**: Interactive split slider to compare low-resolution inputs directly against EDSR-enhanced outputs.
 - **Quality & Hallucination Feedback**: Real-time display of Laplacian blur score, input quality score (0–100), and hallucination guardrail indicators.
 - **Secure Multi-Tenant Auth**: Seamless integration with AWS Cognito User Pools using AWS Amplify v6, strictly sending Cognito `IdToken`s to protected API routes.
@@ -107,7 +107,7 @@ This verifies:
 1. Strict use of Cognito `IdToken` (never AccessToken).
 2. Token persistence in `localStorage` and `sessionStorage`.
 3. Standardized `Authorization: Bearer <IdToken>` headers.
-4. Scale factor payload construction (`2x`, `4x`, `8x`, `16x`, `32x`, `auto`).
+4. Scale factor payload construction (`2x`, `4x`, `8x`, `16x`, `auto`).
 5. Quality assessment metric normalization.
 6. Rate limit (`429`) and authentication failure (`401`) handling.
 7. Fresh presigned S3 URL resolution with 1-hour expiration.

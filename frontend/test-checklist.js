@@ -113,10 +113,10 @@ runTest("Checklist 3: Authorization: Bearer ${idToken} included on all requests"
 });
 
 // -------------------------------------------------------------
-// 4. Handle scale factor options: 2, 4, 8, 16, 32 (or auto)
+// 4. Handle scale factor options: 2, 4, 8, 16 (or auto)
 // -------------------------------------------------------------
-runTest("Checklist 4: Handle scale factor options 2, 4, 8, 16, 32, and auto (null)", () => {
-  const supportedScales = [null, 2, 4, 8, 16, 32];
+runTest("Checklist 4: Handle scale factor options 2, 4, 8, 16, and auto (null)", () => {
+  const supportedScales = [null, 2, 4, 8, 16];
 
   for (const scale of supportedScales) {
     const body = { image: "base64data" };
@@ -131,7 +131,7 @@ runTest("Checklist 4: Handle scale factor options 2, 4, 8, 16, 32, and auto (nul
     } else {
       assert.strictEqual(body.scale_factor, scale);
       assert.strictEqual(body.scaleFactor, scale);
-      assert.ok([2, 4, 8, 16, 32].includes(body.scale_factor));
+      assert.ok([2, 4, 8, 16].includes(body.scale_factor));
     }
   }
 });

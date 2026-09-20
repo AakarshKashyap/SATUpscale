@@ -117,7 +117,7 @@ async function requestWithAuth(url, options, errorLabel) {
 
 /**
  * Submits an image to the real backend upscale endpoint.
- * Accepts optional scaleFactor (2, 4, 8, 16, 32) or null (auto-select).
+ * Accepts optional scaleFactor (2, 4, 8, 16) or null (auto-select).
  * @param {File|Blob} file
  * @param {number|null} scaleFactor
  * @returns {Promise<{

@@ -112,7 +112,7 @@ export default function SettingsPage() {
 
             <div className="settings-field">
               <label>Super-Resolution Factor</label>
-              <div className="settings-value">Auto-adaptive (2× to 32× EDSR Chaining)</div>
+              <div className="settings-value">Auto-adaptive (2× to 16× EDSR Chaining)</div>
             </div>
 
             <div className="settings-field">

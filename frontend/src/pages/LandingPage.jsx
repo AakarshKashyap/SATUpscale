@@ -269,7 +269,7 @@ export default function LandingPage() {
               <div className="feature-icon-wrapper violet-bg">
                 <Globe className="feature-icon" />
               </div>
-              <h3>2× to 32× Neural Reconstruction</h3>
+              <h3>2× to 16× Neural Reconstruction</h3>
               <p>
                 EDSR model chaining with perceptual sharpening and hallucination gate validation.
               </p>
