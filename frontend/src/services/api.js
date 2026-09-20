@@ -35,7 +35,7 @@ async function getAuthenticatedRequest() {
     throw new Error("Your session has expired. Please sign in again.");
   }
 
-  const token = await authService.getAccessToken();
+  const token = await authService.getIdToken();
   return { token, userId: user.sub };
 }
 
@@ -53,7 +53,7 @@ async function requestWithAuth(url, options, errorLabel) {
     try {
       request = {
         ...request,
-        token: await authService.getAccessToken(true)
+        token: await authService.getIdToken(true)
       };
       response = await fetch(url, {
         ...options,
