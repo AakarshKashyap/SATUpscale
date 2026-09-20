@@ -148,9 +148,9 @@ export const authService = {
     }
   },
 
-  async getAccessToken(forceRefresh = false) {
+  async getIdToken(forceRefresh = false) {
     const session = await fetchAuthSession({ forceRefresh });
-    const token = session.tokens?.accessToken?.toString();
+    const token = session.tokens?.idToken?.toString();
     if (!token) {
       throw new Error("Your session has expired. Please sign in again.");
     }

@@ -83,9 +83,6 @@ function extractCognitoFromLocalStorage() {
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key.includes("CognitoIdentityServiceProvider") && key.endsWith(".accessToken")) {
-        token = localStorage.getItem(key);
-      }
       if (key.includes("CognitoIdentityServiceProvider") && key.endsWith(".idToken")) {
         const idToken = localStorage.getItem(key);
         if (idToken) {

@@ -100,12 +100,22 @@ function verifyAndResolveSession() {
     }
 
     if (response.authenticated) {
-      setAuthenticatedHeader(response.user);
-      evaluateActiveState();
-    } else {
-      setGuestHeader();
-      showPanel(STATES.GUEST);
-    }
+    setAuthenticatedHeader(response.user);
+    evaluateActiveState();} 
+    else {
+    setGuestHeader();
+
+    // Still show a right-clicked image even if auth sync failed
+    chrome.storage.local.get(["selectedImageUrl"], (data) => {
+        if (data.selectedImageUrl) {
+            currentSelectedUrl = data.selectedImageUrl;
+            renderSelectedPreview(data.selectedImageUrl);
+            showPanel(STATES.SELECTED);
+        } else {
+            showPanel(STATES.GUEST);
+        }
+    });
+}
   });
 }
 

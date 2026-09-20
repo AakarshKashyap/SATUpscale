@@ -1,7 +1,7 @@
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import ThemeToggle from "./navigation/ThemeToggle";
-import { User, LogOut, ArrowRight } from "lucide-react";
+import { LogOut} from "lucide-react";
 
 export default function AppNavbar() {
   const { user, logout } = useAuth();
@@ -19,7 +19,7 @@ export default function AppNavbar() {
     <header className="public-navbar vantor-style-nav app-header-nav">
       <div className="navbar-container">
         {/* LEFT: BRAND LOGO */}
-        <Link to="/dashboard" className="logo-link">
+        <Link to="/" className="logo-link">
           <div className="brand-logo">
             <span className="brand-name-text">
               <span className="brand-sat">SAT</span>
