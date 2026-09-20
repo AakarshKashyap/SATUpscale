@@ -6,8 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import {
   getHistory,
   upscaleImage,
-  getUserStats,
-  createSyntheticTestImage
+  getUserStats
 } from "../services/api";
 import {
   Upload,
@@ -91,6 +90,10 @@ export default function DashboardPage() {
   const handleFileSelect = (selectedFile) => {
     if (!selectedFile) return;
 
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setFile(selectedFile);
     setError("");
 
@@ -98,19 +101,23 @@ export default function DashboardPage() {
     setPreviewUrl(url);
   };
 
-  const handleLoadTestSample = async () => {
-    try {
-      const testFile = await createSyntheticTestImage(
-        64,
-        64,
-        "sample-satellite-64x64.png"
-      );
-      if (!testFile) return;
-      handleFileSelect(testFile);
-    } catch (err) {
-      console.error("Failed to generate test image:", err);
+  const handleClearSelection = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
     }
+    setFile(null);
+    setPreviewUrl(null);
+    setError("");
+    setScaleFactor(null);
   };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleFileInputChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -269,7 +276,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: "24px", fontWeight: "700", marginTop: "6px" }}>
               {stats?.averageProcessingTimeMs
                 ? `${(stats.averageProcessingTimeMs / 1000).toFixed(2)}s`
-                : "~1.2s"}
+                : "—"}
             </div>
           </div>
 
@@ -288,7 +295,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: "24px", fontWeight: "700", marginTop: "6px" }}>
               {stats?.averageScaleFactor
                 ? `${stats.averageScaleFactor}×`
-                : "8×"}
+                : "—"}
             </div>
           </div>
 
@@ -304,10 +311,10 @@ export default function DashboardPage() {
               <Activity style={{ width: 14, height: 14 }} />
               <span>Avg Quality Score</span>
             </div>
-            <div style={{ fontSize: "24px", fontWeight: "700", marginTop: "6px", color: (stats?.averageInputQuality ?? 70) >= 60 ? "#4ade80" : "#facc15" }}>
+            <div style={{ fontSize: "24px", fontWeight: "700", marginTop: "6px", color: stats?.averageInputQuality ? (stats.averageInputQuality >= 60 ? "#4ade80" : "#facc15") : "inherit" }}>
               {stats?.averageInputQuality
                 ? `${stats.averageInputQuality}/100`
-                : "72.4/100"}
+                : "—"}
             </div>
           </div>
         </section>
@@ -320,7 +327,7 @@ export default function DashboardPage() {
             }`}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
-            onLeave={handleDrag}
+            onDragLeave={handleDrag}
             onDrop={handleDrop}
           >
             <div className="dropzone-content">
@@ -371,23 +378,6 @@ export default function DashboardPage() {
                         hidden
                       />
                     </label>
-
-                    <button
-                      type="button"
-                      onClick={handleLoadTestSample}
-                      className="secondary-btn"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "8px 14px",
-                        fontSize: "12px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <Sparkles style={{ width: 14, height: 14 }} />
-                      <span>Test 64×64 Tile</span>
-                    </button>
                   </div>
                 </>
               ) : (
@@ -437,12 +427,7 @@ export default function DashboardPage() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setFile(null);
-                      setPreviewUrl(null);
-                      setError("");
-                      setScaleFactor(null);
-                    }}
+                    onClick={handleClearSelection}
                     disabled={processing}
                     className="ghost-btn cancel-file-btn"
                   >
@@ -660,8 +645,10 @@ export default function DashboardPage() {
                       </td>
 
                       <td>
-                        <span className="status-pill completed">
-                          Completed
+                        <span className={`status-pill ${job.status === "done" || job.status === "completed" || job.status === "success" ? "completed" : job.status === "failed" ? "error" : "pending"}`}>
+                          {job.status
+                            ? job.status.charAt(0).toUpperCase() + job.status.slice(1)
+                            : "Completed"}
                         </span>
                       </td>
 

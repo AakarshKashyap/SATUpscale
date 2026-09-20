@@ -237,9 +237,18 @@ def _get_user_id_from_jwt(event: dict) -> Tuple[Optional[str], Optional[Dict]]:
 # ================================================================================
 
 _CORS_ALLOWED_ORIGINS = {
+    "https://satupscale.com",
+    "https://www.satupscale.com",
     "http://localhost:5173",
     "http://localhost:4173",
+    "http://127.0.0.1:5173",
 }
+
+_ALLOWED_ORIGINS_ENV = os.environ.get("ALLOWED_ORIGINS", "")
+if _ALLOWED_ORIGINS_ENV:
+    for _o in _ALLOWED_ORIGINS_ENV.split(","):
+        if _o.strip():
+            _CORS_ALLOWED_ORIGINS.add(_o.strip())
 
 
 def _get_cors_origin(event: dict) -> str:
@@ -248,7 +257,9 @@ def _get_cors_origin(event: dict) -> str:
     origin = headers.get("origin") or headers.get("Origin") or ""
     if origin in _CORS_ALLOWED_ORIGINS:
         return origin
-    return "*"
+    if origin.endswith(".satupscale.com"):
+        return origin
+    return "https://satupscale.com"
 
 
 def _cors_headers(event: dict) -> Dict[str, str]:
@@ -328,7 +339,6 @@ def handler(event, context):
     - REST API Gateway (v1): event['httpMethod'] + event['path']
     - HTTP API Gateway (v2): event['requestContext']['http']['method'] + event['rawPath']
     """
-    logger.info(f"FULL_EVENT: {json.dumps(event)}")
     path = (event.get("path") or event.get("rawPath") or "").rstrip("/")
     method = (
         event.get("httpMethod")
@@ -337,7 +347,8 @@ def handler(event, context):
 
     logger.info(json.dumps({
         "route":     f"{method} {path}",
-        "requestId": context.aws_request_id,
+        "requestId": getattr(context, "aws_request_id", "local"),
+        "bodyLength": len(event.get("body") or "") if event.get("body") else 0,
     }))
 
     try:
@@ -786,10 +797,15 @@ def _presign(url_or_key: Optional[str]) -> Optional[str]:
     prefix = f"https://{_BUCKET}.s3.amazonaws.com/"
     if url_or_key.startswith(prefix):
         key = url_or_key[len(prefix):]
-    elif url_or_key.startswith("http://") or url_or_key.startswith("https://"):
+    elif f"/{_BUCKET}/" in url_or_key:
+        key = url_or_key.split(f"/{_BUCKET}/")[-1]
+    elif "X-Amz-Signature" in url_or_key:
         return url_or_key
+    elif url_or_key.startswith("http://") or url_or_key.startswith("https://"):
+        return None
     else:
         key = url_or_key
+
     try:
         return _s3.generate_presigned_url(
             "get_object",
@@ -797,8 +813,8 @@ def _presign(url_or_key: Optional[str]) -> Optional[str]:
             ExpiresIn=3600,
         )
     except Exception as exc:
-        logger.warning(f"Presign failed for {url_or_key}: {exc}")
-        return url_or_key
+        logger.error(f"Presign failed for {url_or_key}: {exc}")
+        return None
 
 
 def _preflight_response(event: dict) -> dict:

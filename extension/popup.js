@@ -1,5 +1,12 @@
 // SATUpscale Companion Popup Script
-const PLATFORM_BASE_URL = "http://localhost:5173";
+const DEFAULT_PLATFORM_URL = "https://satupscale.com";
+let PLATFORM_BASE_URL = DEFAULT_PLATFORM_URL;
+
+chrome.storage.local.get(["satup_platform_url"], (data) => {
+  if (data && data.satup_platform_url) {
+    PLATFORM_BASE_URL = data.satup_platform_url;
+  }
+});
 
 // STATE MACHINE DEFINITION
 const STATES = {
@@ -79,6 +86,9 @@ function initListeners() {
 
 function listenStorageChanges() {
   chrome.storage.onChanged.addListener((changes) => {
+    if (changes.satup_platform_url && changes.satup_platform_url.newValue) {
+      PLATFORM_BASE_URL = changes.satup_platform_url.newValue;
+    }
     if (changes.satup_active_job || changes.selectedImageUrl || changes.satup_token || changes.satup_user) {
       verifyAndResolveSession();
     }
@@ -280,19 +290,25 @@ function clearSelectionAndReturn() {
 // RESULT RENDERING & NAVIGATION
 // ----------------------------------------------------
 function renderCompletedResult(job) {
-  const output = job.outputUrl || job.inputUrl;
+  if (!job.outputUrl) {
+    renderErrorState("Enhanced output image is missing.");
+    showPanel(STATES.ERROR);
+    return;
+  }
   resultImagePreview.innerHTML = `
-    <img src="${output}" alt="Enhanced satellite output" />
+    <img src="${job.outputUrl}" alt="Enhanced satellite output" />
   `;
-  downloadResultLink.href = output;
+  downloadResultLink.href = job.outputUrl;
   downloadResultLink.download = `satup-${job.jobId || "enhanced"}.png`;
 }
 
 function openResultInPlatform() {
-  const jobId = currentActiveJob?.jobId || "latest";
-  const output = currentActiveJob?.outputUrl || currentSelectedUrl;
-  const targetUrl = `${PLATFORM_BASE_URL}/result/${jobId}?image=${encodeURIComponent(output)}`;
-  openPlatformRoute(targetUrl, true);
+  const jobId = currentActiveJob?.jobId;
+  if (!jobId || jobId === "latest") {
+    openPlatformRoute("/dashboard");
+    return;
+  }
+  openPlatformRoute(`/result/${encodeURIComponent(jobId)}`);
 }
 
 function renderErrorState(errMessage) {

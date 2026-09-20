@@ -1,4 +1,4 @@
-﻿import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export default function ProtectedRoute({ children }) {
@@ -6,7 +6,24 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (loading) {
-    return null;
+    return (
+      <div
+        className="app-shell dark-theme-root aerospace-aesthetic"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div className="loader" style={{ margin: "0 auto 16px" }} />
+          <p style={{ opacity: 0.6, fontSize: "12px", letterSpacing: "0.1em" }}>
+            AUTHENTICATING WORKSPACE...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

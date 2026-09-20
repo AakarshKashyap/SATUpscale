@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AuthContext } from "./auth-context";
 import { authService } from "../services/auth";
 
@@ -9,12 +9,24 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    authService.getCurrentUser().then((currentUser) => {
-      if (active) {
-        setUser(currentUser);
-        setLoading(false);
-      }
-    });
+    authService
+      .getCurrentUser()
+      .then((currentUser) => {
+        if (active) {
+          setUser(currentUser);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to restore auth session:", err);
+        if (active) {
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
     const handleAuthExpired = () => {
       if (active) setUser(null);

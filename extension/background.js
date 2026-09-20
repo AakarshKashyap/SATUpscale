@@ -29,14 +29,22 @@ async function verifyAndSyncWebSession() {
   try {
     const tabs = await chrome.tabs.query({
       url: [
+        "https://*.satupscale.com/*",
+        "https://satupscale.com/*",
         "http://localhost:5173/*",
-        "http://127.0.0.1:5173/*",
-        "https://*.satupscale.com/*"
+        "http://127.0.0.1:5173/*"
       ]
     });
 
     if (tabs && tabs.length > 0) {
       const activeWebTab = tabs[0];
+      try {
+        const origin = new URL(activeWebTab.url).origin;
+        await chrome.storage.local.set({ satup_platform_url: origin });
+      } catch {
+        // ignore invalid URL parse
+      }
+
       const results = await chrome.scripting.executeScript({
         target: { tabId: activeWebTab.id },
         func: extractCognitoFromLocalStorage
@@ -57,7 +65,7 @@ async function verifyAndSyncWebSession() {
       }
     }
   } catch (err) {
-    console.warn("SATUpscale Auth Sync script error:", err);
+    console.warn("SATUpscale Auth Sync script error:", err?.message || err);
   }
 
   // Fallback to cached storage check
@@ -208,7 +216,11 @@ async function executeEnhancementJob(imageUrl) {
     const apiRes = await fetch(`${API_BASE_URL}/upscale`, {
       method: "POST",
       headers: headers,
-      body: JSON.stringify({ image: base64Data })
+      body: JSON.stringify({
+        image: base64Data,
+        scale_factor: 8,
+        scaleFactor: 8
+      })
     });
 
     if (!apiRes.ok) {
@@ -217,13 +229,19 @@ async function executeEnhancementJob(imageUrl) {
     }
 
     const data = await apiRes.json();
+    const outputUrl = data.outputUrl || data.processedUrl;
+
+    if (!outputUrl) {
+      throw new Error("Backend did not return a valid enhanced output image URL.");
+    }
 
     await chrome.storage.local.set({
       satup_active_job: {
         state: "completed",
         inputUrl: imageUrl,
-        outputUrl: data.outputUrl || imageUrl,
-        jobId: data.jobId || "latest",
+        outputUrl: outputUrl,
+        jobId: data.jobId || null,
+        actualScale: data.actualScale || data.actualScaleFactor || 8,
         timestamp: Date.now()
       }
     });

@@ -252,11 +252,10 @@ export default function ResultPage() {
               {/* PROCESSED OUTPUT PANEL */}
               <div className="result-image-card output-card">
                 <div className="image-label-badge violet">
-                  SATUPSCALE ENHANCED ·{" "}
-                  {job?.actualScale ||
-                    job?.requestedScale ||
-                    8}
-                  ×
+                  SATUPSCALE ENHANCED
+                  {job?.actualScale || job?.actualScaleFactor || job?.requestedScale || job?.scaleFactor
+                    ? ` · ${job.actualScale || job.actualScaleFactor || job.requestedScale || job.scaleFactor}×`
+                    : ""}
                 </div>
 
                 {processedUrl ? (
@@ -337,9 +336,9 @@ export default function ResultPage() {
                   {job?.actualScaleFactor ||
                     job?.actualScale ||
                     job?.scaleFactor ||
-                    job?.requestedScale ||
-                    8}
-                  × Super-Resolution
+                    job?.requestedScale
+                    ? `${job?.actualScaleFactor || job?.actualScale || job?.scaleFactor || job?.requestedScale}× Super-Resolution`
+                    : "Auto Super-Resolution"}
                 </strong>
               </div>
 

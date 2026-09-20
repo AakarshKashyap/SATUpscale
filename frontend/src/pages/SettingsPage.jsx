@@ -92,7 +92,7 @@ export default function SettingsPage() {
               <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <span style={{ fontSize: "11px", opacity: 0.65, textTransform: "uppercase" }}>Avg Scale Factor</span>
                 <div style={{ fontSize: "20px", fontWeight: "700", marginTop: "4px" }}>
-                  {stats?.averageScaleFactor ? `${stats.averageScaleFactor}×` : "8×"}
+                  {stats?.averageScaleFactor ? `${stats.averageScaleFactor}×` : "N/A"}
                 </div>
               </div>
 
@@ -112,7 +112,7 @@ export default function SettingsPage() {
 
             <div className="settings-field">
               <label>Super-Resolution Factor</label>
-              <div className="settings-value">8× (Standard AI Model)</div>
+              <div className="settings-value">Auto-adaptive (2× to 32× EDSR Chaining)</div>
             </div>
 
             <div className="settings-field">
@@ -125,12 +125,12 @@ export default function SettingsPage() {
           <div className="settings-card">
             <h3>Browser Extension</h3>
             <p className="settings-card-desc">
-              Connect the SATUpscale Chrome extension to your local or cloud workspace.
+              Connect the SATUpscale Chrome extension to your active workspace.
             </p>
 
             <div className="settings-field">
               <label>Target Web Endpoint</label>
-              <code className="settings-code">http://localhost:5173</code>
+              <code className="settings-code">{typeof window !== "undefined" ? window.location.origin : "https://satupscale.com"}</code>
             </div>
 
             <div className="settings-field">

@@ -7,20 +7,21 @@ import { getHistory } from "../services/api";
 export default function HistoryPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
     async function fetchJobs() {
       setLoading(true);
+      setError("");
       try {
         const data = await getHistory();
         if (isMounted && data && Array.isArray(data.jobs)) {
           setJobs(data.jobs);
         }
-      } catch {
+      } catch (err) {
         if (isMounted) {
-          // Backend may be offline or no history yet for this user
+          setError(err?.message || "Failed to load enhancement history.");
           setJobs([]);
         }
       } finally {
@@ -66,7 +67,8 @@ export default function HistoryPage() {
                 job.actualScaleFactor ||
                 job.actualScale ||
                 job.scaleFactor ||
-                8;
+                null;
+              const scaleLabel = scale ? `${scale}×` : "AUTO";
               const quality =
                 job.inputQuality ??
                 job.qualityAssessment?.inputQualityScore ??
@@ -82,9 +84,9 @@ export default function HistoryPage() {
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                     ) : (
-                      <span>{scale}×</span>
+                      <span>{scaleLabel}</span>
                     )}
-                    <span>{scale}×</span>
+                    <span>{scaleLabel}</span>
                   </div>
 
                   <div className="history-info">

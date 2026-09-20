@@ -12,7 +12,7 @@
   ],
   "host_permissions": [
     "<all_urls>",
-    "https://0237u8c62.execute-api.us-east-1.amazonaws.com/*",
+    "https://0237u8c62a.execute-api.us-east-1.amazonaws.com/*",
     "http://localhost:5173/*",
     "http://127.0.0.1:5173/*",
     "https://*.satupscale.com/*"

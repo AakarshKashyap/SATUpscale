@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import PublicNavbar from "../components/PublicNavbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
@@ -8,6 +8,8 @@ import { ArrowRight, AlertCircle, Lock } from "lucide-react";
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnPath = location.state?.from || "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,9 +18,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
+      navigate(returnPath, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, returnPath]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function LoginPage() {
     try {
       setSubmitting(true);
       await login(email, password);
-      navigate("/dashboard", { replace: true });
+      navigate(returnPath, { replace: true });
     } catch (err) {
       setError(err.message || "Failed to sign in.");
     } finally {

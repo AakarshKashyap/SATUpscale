@@ -115,7 +115,7 @@ export default function LandingPage() {
             <div className="strip-divider"></div>
             <div className="strip-item">
               <span className="strip-label">SATELLITE ORBIT</span>
-              <strong className="strip-val">3 SATELLITES IN LEO / MEO</strong>
+              <strong className="strip-val">LEO / MEO OBSERVATION</strong>
             </div>
             <div className="strip-divider"></div>
             <div className="strip-item">
@@ -125,7 +125,7 @@ export default function LandingPage() {
             <div className="strip-divider"></div>
             <div className="strip-item">
               <span className="strip-label">PIPELINE STATUS</span>
-              <strong className="strip-val text-green">ONLINE · 60 FPS</strong>
+              <strong className="strip-val text-green">ONLINE · READY</strong>
             </div>
           </div>
         </section>
@@ -155,12 +155,12 @@ export default function LandingPage() {
                 <strong>{activeTarget.lon}</strong>
               </div>
               <div className="coord-data-row">
-                <span>SENSOR SATELLITE</span>
-                <strong>SAT-01 MULTISPECTRAL</strong>
+                <span>SENSOR PROFILE</span>
+                <strong>MULTISPECTRAL SATELLITE</strong>
               </div>
               <div className="coord-data-row">
-                <span>GROUND RESOLUTION</span>
-                <strong>0.5 METERS / PIXEL</strong>
+                <span>RECONSTRUCTION</span>
+                <strong>SUB-METER TARGETING</strong>
               </div>
             </div>
 
@@ -260,7 +260,7 @@ export default function LandingPage() {
             <span className="section-eyebrow">ARCHITECTURE</span>
             <h2 className="section-title">Technical Neural Capabilities</h2>
             <p className="section-subtitle">
-              Built on AWS serverless Lambda GPU pipelines with zero latency data streaming.
+              Built on AWS serverless containerized Lambda with automated EDSR neural pipelines.
             </p>
           </div>
 
@@ -269,9 +269,9 @@ export default function LandingPage() {
               <div className="feature-icon-wrapper violet-bg">
                 <Globe className="feature-icon" />
               </div>
-              <h3>8× Sub-Pixel Reconstruction</h3>
+              <h3>2× to 32× Neural Reconstruction</h3>
               <p>
-                Neural model specifically trained on multispectral satellite imagery sensors.
+                EDSR model chaining with perceptual sharpening and hallucination gate validation.
               </p>
             </div>
 
@@ -289,9 +289,9 @@ export default function LandingPage() {
               <div className="feature-icon-wrapper violet-bg">
                 <Cloud className="feature-icon" />
               </div>
-              <h3>Permanent S3 Output Storage</h3>
+              <h3>Secure S3 Cloud Storage</h3>
               <p>
-                AWS S3 object creation with permanent shareable output URLs.
+                AWS S3 object encryption with presigned access URLs and automated 48-hour cost control lifecycle.
               </p>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function LandingPage() {
               <span className="section-eyebrow violet-text">DISPATCH</span>
               <h2>Launch Satellite Intelligence Workspace</h2>
               <p>
-                Access the workspace to upload imagery, inspect history, and process 8× enhancements.
+                Access the workspace to upload imagery, inspect history, and process super-resolution enhancements.
               </p>
               <div className="extension-actions">
                 <Link to={ctaTarget} className="minimal-primary-cta" data-cursor="OPEN">

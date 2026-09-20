@@ -1,6 +1,5 @@
 // SATUpscale Companion Content Script
 (function () {
-  console.log("[SATUpscale] content.js loaded on:", window.location.href);
   let isSelectionMode = false;
   let hoveredElement = null;
   let bannerElement = null;
@@ -9,91 +8,72 @@
   // AUTOMATIC COGNITO AUTH SESSION BRIDGE
   // ----------------------------------------------------
   function syncAuthSession() {
-  if (
-    !window.location.host.includes("localhost:5173") &&
-    !window.location.host.includes("satupscale")
-  ) {
-    return;
-  }
-
-  try {
-    let idToken = null;
-    let user = null;
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-
-      if (
-        key &&
-        key.includes("CognitoIdentityServiceProvider") &&
-        key.endsWith(".idToken")
-      ) {
-        idToken = localStorage.getItem(key);
-        break;
-      }
-    }
-
-    if (!idToken) {
-      idToken = localStorage.getItem("satup_id_token");
-    }
-
-    if (!idToken) {
-      console.log("[SATUpscale] No Cognito ID token found.");
+    if (
+      !window.location.host.includes("localhost:5173") &&
+      !window.location.host.includes("satupscale")
+    ) {
       return;
     }
 
-    const parts = idToken.split(".");
+    try {
+      let idToken = null;
+      let user = null;
 
-    if (parts.length !== 3) {
-      console.error("[SATUpscale] Invalid ID token format.");
-      return;
-    }
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
 
-    const payload = JSON.parse(atob(parts[1]));
-
-    user = {
-      name:
-        payload.name ||
-        payload.email?.split("@")[0] ||
-        payload["cognito:username"] ||
-        "User",
-      email: payload.email || "",
-      sub: payload.sub || ""
-    };
-
-    console.log("[SATUpscale] ID token found:", {
-      tokenUse: payload.token_use,
-      audience: payload.aud,
-      expired: payload.exp * 1000 < Date.now(),
-      user: user.email
-    });
-
-    chrome.runtime.sendMessage(
-      {
-        action: "AUTH_SESSION_SYNC",
-        token: idToken,
-        user
-      },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            "[SATUpscale] Auth sync failed:",
-            chrome.runtime.lastError.message
-          );
-          return;
+        if (
+          key &&
+          key.includes("CognitoIdentityServiceProvider") &&
+          key.endsWith(".idToken")
+        ) {
+          idToken = localStorage.getItem(key);
+          break;
         }
-
-        console.log("[SATUpscale] Auth sync response:", response);
       }
-    );
-  } catch (err) {
-    console.error("[SATUpscale] Auth sync error:", err);
+
+      if (!idToken) {
+        idToken = localStorage.getItem("satup_id_token");
+      }
+
+      if (!idToken) {
+        return;
+      }
+
+      const parts = idToken.split(".");
+      if (parts.length !== 3) {
+        return;
+      }
+
+      const payload = JSON.parse(atob(parts[1]));
+
+      user = {
+        name:
+          payload.name ||
+          payload.email?.split("@")[0] ||
+          payload["cognito:username"] ||
+          "User",
+        email: payload.email || "",
+        sub: payload.sub || ""
+      };
+
+      chrome.runtime.sendMessage(
+        {
+          action: "AUTH_SESSION_SYNC",
+          token: idToken,
+          user
+        },
+        () => {
+          // Handled silently
+        }
+      );
+    } catch {
+      // Handled silently
+    }
   }
-}
 
   syncAuthSession();
   setTimeout(syncAuthSession, 1500);
-  setTimeout(syncAuthSession, 4000);
 
   // ----------------------------------------------------
   // DOM IMAGE INSPECTION ENGINE

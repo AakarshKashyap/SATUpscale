@@ -139,7 +139,6 @@ async function requestWithAuth(url, options, errorLabel) {
  */
 export async function upscaleImage(file, scaleFactor = null) {
   const base64Image = await fileToBase64(file);
-  await getAuthenticatedRequest();
 
   const body = {
     image: base64Image

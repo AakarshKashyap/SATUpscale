@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import Footer from "../components/Footer";
-import { upscaleImage, createSyntheticTestImage } from "../services/api";
-import { Sparkles, AlertTriangle, AlertCircle } from "lucide-react";
+import { upscaleImage } from "../services/api";
+import { AlertTriangle, AlertCircle } from "lucide-react";
 
 const SCALE_OPTIONS = [
   { value: null, label: "Auto" },
@@ -21,12 +21,25 @@ export default function EnhancePage() {
   const [resultData, setResultData] = useState(null);
   const [error, setError] = useState("");
   const [scaleFactor, setScaleFactor] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleFile = (event) => {
     const selected = event.target.files[0];
     if (!selected) return;
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
     setFile(selected);
     setResultData(null);
@@ -34,26 +47,6 @@ export default function EnhancePage() {
 
     const imageUrl = URL.createObjectURL(selected);
     setPreviewUrl(imageUrl);
-  };
-
-  const handleLoadTestSample = async () => {
-    try {
-      const sampleFile = await createSyntheticTestImage(
-        64,
-        64,
-        "sample-satellite-64x64.png"
-      );
-      if (!sampleFile) return;
-
-      setFile(sampleFile);
-      setResultData(null);
-      setError("");
-
-      const imageUrl = URL.createObjectURL(sampleFile);
-      setPreviewUrl(imageUrl);
-    } catch (err) {
-      console.error("Failed to generate 64x64 test sample:", err);
-    }
   };
 
   const handleUpscale = async () => {
@@ -102,11 +95,52 @@ export default function EnhancePage() {
     setScaleFactor(null);
   };
 
+  const handleDownload = async () => {
+    const targetUrl = resultData?.outputUrl || resultData?.processedUrl;
+    if (!targetUrl || downloading) return;
+
+    try {
+      setDownloading(true);
+
+      const response = await fetch(targetUrl);
+      if (!response.ok) {
+        throw new Error(`Download request failed (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      if (!blob || blob.size === 0) {
+        throw new Error("The downloaded image is empty.");
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = resultData?.jobId
+        ? `satup-${resultData.jobId}.png`
+        : "enhanced-satellite.png";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    } catch (downloadError) {
+      console.error("Download failed:", downloadError);
+      alert("Unable to download the enhanced image. Please check your network connection.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const actualScale =
     resultData?.actualScale ||
+    resultData?.actualScaleFactor ||
     resultData?.requestedScale ||
+    resultData?.scaleFactor ||
     scaleFactor ||
-    8;
+    null;
 
   const inputQualityScore =
     resultData?.qualityAssessment?.inputQualityScore ??
@@ -197,26 +231,6 @@ export default function EnhancePage() {
                   onChange={handleFile}
                 />
               </label>
-
-              {!file && (
-                <button
-                  type="button"
-                  onClick={handleLoadTestSample}
-                  className="secondary-btn"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
-                  title="Test super-resolution with a fast 64x64 raster"
-                >
-                  <Sparkles style={{ width: 14, height: 14 }} />
-                  <span>Test 64×64 Tile</span>
-                </button>
-              )}
             </div>
 
 
@@ -423,7 +437,7 @@ export default function EnhancePage() {
                       backgroundPosition: "center"
                     }}
                   >
-                    <span>AFTER · {actualScale}×</span>
+                    <span>AFTER{actualScale ? ` · ${actualScale}×` : ""}</span>
                   </div>
                 </div>
 
@@ -507,15 +521,18 @@ export default function EnhancePage() {
                 )}
 
                 <div className="result-actions">
-                  <a
-                    href={displayOutputUrl}
-                    download={`satup-${resultData.jobId || "enhanced"}.png`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={downloading}
                     className="primary-btn"
+                    style={{
+                      opacity: downloading ? 0.7 : 1,
+                      cursor: downloading ? "wait" : "pointer"
+                    }}
                   >
-                    Download Enhanced Image
-                  </a>
+                    {downloading ? "Downloading..." : "Download Enhanced Image"}
+                  </button>
 
                   <button
                     onClick={() =>

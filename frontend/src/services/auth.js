@@ -9,7 +9,9 @@ import {
 } from "aws-amplify/auth";
 
 const appOrigin =
-  typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+  typeof window !== "undefined"
+    ? window.location.origin
+    : (import.meta.env.VITE_APP_URL || "https://satupscale.com");
 
 const cognitoConfig = {
   Auth: {
@@ -19,12 +21,14 @@ const cognitoConfig = {
       loginWith: {
         email: true,
         oauth: {
-          domain:
-            import.meta.env.VITE_COGNITO_DOMAIN ||
-            "satup-setup.auth.us-east-1.amazoncognito.com",
+          domain: import.meta.env.VITE_COGNITO_DOMAIN || "",
           scopes: ["openid", "email", "profile"],
-          redirectSignIn: [`${appOrigin}/login`],
-          redirectSignOut: [`${appOrigin}/login`],
+          redirectSignIn: [
+            import.meta.env.VITE_COGNITO_REDIRECT_SIGN_IN || `${appOrigin}/login`
+          ],
+          redirectSignOut: [
+            import.meta.env.VITE_COGNITO_REDIRECT_SIGN_OUT || `${appOrigin}/login`
+          ],
           responseType: "code"
         }
       }

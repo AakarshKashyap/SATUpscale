@@ -7,9 +7,12 @@ export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate("/login");
+    }
   };
 
   const displayName = user?.name || user?.email?.split("@")[0] || "Account";

@@ -30,9 +30,23 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
-          {/* RESULT PAGES (Public / independently addressable) */}
-          <Route path="/result/:jobId" element={<ResultPage />} />
-          <Route path="/result" element={<ResultPage />} />
+          {/* RESULT PAGES (Protected workspace routes) */}
+          <Route
+            path="/result/:jobId"
+            element={
+              <ProtectedRoute>
+                <ResultPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/result"
+            element={
+              <ProtectedRoute>
+                <ResultPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* PROTECTED ROUTES */}
           <Route
