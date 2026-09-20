@@ -14,12 +14,14 @@ const appOrigin =
 const cognitoConfig = {
   Auth: {
     Cognito: {
-      userPoolId: "us-east-1_X6Xtv869G",
-      userPoolClientId: "2akj9d7fa1fbnn5p08m017daap",
+      userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || "",
+      userPoolClientId: import.meta.env.VITE_COGNITO_CLIENT_ID || "",
       loginWith: {
         email: true,
         oauth: {
-          domain: "satup-setup.auth.us-east-1.amazoncognito.com",
+          domain:
+            import.meta.env.VITE_COGNITO_DOMAIN ||
+            "satup-setup.auth.us-east-1.amazoncognito.com",
           scopes: ["openid", "email", "profile"],
           redirectSignIn: [`${appOrigin}/login`],
           redirectSignOut: [`${appOrigin}/login`],

@@ -87,7 +87,7 @@ Objects auto-expire after **48 hours** (DynamoDB TTL + S3 lifecycle rule).
 
 ## API
 
-**Base URL:** `https://0237u8c62a.execute-api.us-east-1.amazonaws.com/prod`  
+**Base URL:** `https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod`  
 **Auth:** `Authorization: Bearer <IdToken>` on all routes except OPTIONS
 
 ---

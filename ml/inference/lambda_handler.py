@@ -44,9 +44,9 @@ logger.setLevel(logging.INFO)
 # ================================================================================
 # Cognito configuration - MUST match your actual values
 # ================================================================================
-COGNITO_REGION = "us-east-1"
-COGNITO_USER_POOL_ID = "us-east-1_X6Xtv869G"
-COGNITO_FRONTEND_CLIENT_ID = "2akj9d7fa1fbnn5p08m017daap"
+COGNITO_REGION = os.environ.get("AWS_REGION", "us-east-1")
+COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
+COGNITO_FRONTEND_CLIENT_ID = os.environ.get("COGNITO_CLIENT_ID", "")
 COGNITO_ISSUER = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
 COGNITO_JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 

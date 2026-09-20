@@ -1,7 +1,7 @@
 import { authService } from "./auth";
 
 const API_BASE_URL =
-  "https://0237u8c62a.execute-api.us-east-1.amazonaws.com/prod";
+  import.meta.env.VITE_API_BASE_URL || "";
 
 /**
  * Converts a File or Blob into a raw base64 string without data prefix.

@@ -17,8 +17,8 @@
         "dynamodb:Query"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:519725697841:table/SRMJobs",
-        "arn:aws:dynamodb:us-east-1:519725697841:table/SRMJobs/index/UserHistoryIndex"
+        "arn:aws:dynamodb:us-east-1:<ACCOUNT_ID>:table/SRMJobs",
+        "arn:aws:dynamodb:us-east-1:<ACCOUNT_ID>:table/SRMJobs/index/UserHistoryIndex"
       ]
     }
   ]
