@@ -23,7 +23,7 @@ Satellite imagery acquired from Low Earth Orbit (LEO) and Medium Earth Orbit (ME
 ## 2. The Solution
 
 SATUpscale provides a verifiable super-resolution workflow across web and browser companion interfaces:
-1. **Dynamic Scaling (Auto / 2× / 4× / 8× / 16× / 32×):** Chains PyTorch-based EDSR models to scale small satellite crops up to a safe 2,048px cap.
+1. **Dynamic Scaling (Auto / 2× / 4× / 8× / 16× ):** Chains PyTorch-based EDSR models to scale small satellite crops up to a safe 2,048px cap.
 2. **Deterministic Hallucination Gate:** Uses round-trip Structural Similarity Index Measure (SSIM) and high-frequency spectral energy ratios. If the neural model hallucinates ungrounded details, it automatically falls back to an artifact-free Lanczos interpolation.
 3. **Adaptive Post-Processing:** Two-stage refinement featuring Bilateral filtering (watercolor artifact suppression), Contrast-Limited Adaptive Histogram Equalization (CLAHE in LAB color space), dynamic saturation recovery, and scale-tuned unsharp masking.
 4. **Cloud-Native AWS Backend:** Secure, multi-tenant serverless execution utilizing AWS Lambda, private S3 storage with temporary presigned URLs, DynamoDB with automated 48-hour TTL lifecycle management, and AWS Cognito user authentication.
